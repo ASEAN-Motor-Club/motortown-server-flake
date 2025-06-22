@@ -111,11 +111,11 @@ let
     stripRoot = false;
   };
 
-  motorTownMods = pkgs.fetchFromGithub {
+  motorTownMods = pkgs.fetchFromGitHub {
     owner = "drpsyko101";
     repo = "MotorTownMods";
-    rev = "main";
-    hash = lib.fakeHash;
+    rev = "d997964adb06db0eeaaa9e0fa9fbb082e2528b23";
+    hash = "sha256-0NNbotUeODwkO5DdY+6oricT/4pYmIPQGRJVd5AHIus=";
   };
 in
 {
