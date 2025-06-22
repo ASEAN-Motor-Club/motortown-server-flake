@@ -98,11 +98,11 @@ let
   apiPassword = cfg.dedicatedServerConfig.HostWebAPIServerPassword;
   apiPort = cfg.dedicatedServerConfig.HostWebAPIServerPort;
 
-  # Restore $ sign for variable
-  serverRestartMessageParam = builtins.replaceStrings
+  # Restore $ sign for variable interpolation
+  restartMessageParam = builtins.replaceStrings
     [ "%24" ]
     [ "$" ]
-    (lib.strings.escapeURL cfg.serverRestartMessage);
+    (lib.strings.escapeURL cfg.restartMessage);
 
   # UE4SS Mod
   ue4ss = pkgs.fetchzip {
@@ -155,7 +155,17 @@ in
       type = types.str;
       default = "Steamapps";
     };
-    serverRestartMessage = mkOption {
+    restartSchedule = mkOption {
+      type = types.str;
+      default = "Mon,Sat *-*-* 07:30:00";
+      description = "The scheduled restart time(s), in systemd OnCalendar format: https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS";
+    };
+    restartAnnouncementSchedule = mkOption {
+      type = types.str;
+      default = "Mon,Sat *-*-* 01:15,25,29";
+      description = "The scheduled restart announcement time(s), in systemd OnCalendar format: https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS";
+    };
+    restartMessage = mkOption {
       type = types.str;
       default = "The server will restart in $minutes minutes. You can rejoin 5 minutes after that";
     };
@@ -264,7 +274,7 @@ in
             echo "$minutes_left"
         }
         minutes=$(minutes_to_time "01:30")
-        curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${serverRestartMessageParam}" -d ""
+        curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
       '';
     };
 
@@ -288,7 +298,7 @@ in
     systemd.timers.motortown-server-restart = {
       description = "Timer to restart the server";
       timerConfig = {
-        OnCalendar = "Mon,Sat *-*-* 01:30:00";
+        OnCalendar = cfg.restartSchedule;
         AccuracySec = "1min";
         Unit = "motortown-server-restart.service";
       };
@@ -298,7 +308,7 @@ in
     systemd.timers.motortown-server-restart-announcement = {
       description = "Timer to restart the server";
       timerConfig = {
-        OnCalendar = "Mon,Sat *-*-* 01:15,25,29";
+        OnCalendar = cfg.restartAnnouncementSchedule;
         AccuracySec = "1min";
         Unit = "motortown-server-restart-announcement.service";
       };
