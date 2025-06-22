@@ -192,10 +192,6 @@ in
       "steamworks-sdk-redist"
     ];
 
-    environment.systemPackages = [
-      pkgs.steamcmd
-    ];
-
     programs.steam = {
       enable = true;
       extraCompatPackages = with pkgs; [
@@ -336,7 +332,7 @@ in
           exit 1
         fi
 
-        steamcmd +@sSteamCmdForcePlatformType windows \
+        ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
           +login $STEAM_USERNAME $STEAM_PASSWORD \
           +app_update 1007 validate \
           +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
@@ -348,6 +344,7 @@ in
       '';
     in [
       serverUpdateScript
+      pkgs.steamcmd
     ];
   };
 }
