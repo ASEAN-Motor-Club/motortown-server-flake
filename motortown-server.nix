@@ -92,7 +92,7 @@ let
       default = [];
     };
   };
-  dedicatedServerConfigFile = pkgs.writeFile "DedicatedServerConfig.json" (toJson cfg.dedicatedServerConfig);
+  dedicatedServerConfigFile = pkgs.writeText "DedicatedServerConfig.json" (toJson cfg.dedicatedServerConfig);
   serverConfig = builtins.fromJSON (builtins.readFile ../config/DedicatedServerConfig_weekday.json);
   apiPassword = serverConfig.HostWebAPIServerPassword;
   apiPort = serverConfig.HostWebAPIServerPort;
