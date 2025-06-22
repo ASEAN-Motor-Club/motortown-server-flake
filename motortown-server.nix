@@ -171,6 +171,25 @@ in
       allowedTCPPorts = [cfg.port cfg.queryPort];
       allowedUDPPorts = [cfg.port cfg.queryPort];
     };
+
+    nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+      "steam"
+      "steamcmd"
+      "steam-original"
+      "steam-unwrapped"
+      "steam-run"
+      "motortown-server"
+      "steamworks-sdk-redist"
+    ];
+
+    programs.steam = {
+      enable = true;
+      extraCompatPackages = with pkgs; [
+        proton-ge-bin
+      ];
+      protontricks.enable = true;
+    };
+
     systemd.services.motortown-server = {
       wantedBy = [ "multi-user.target" ]; 
       after = [ "network.target" ];
