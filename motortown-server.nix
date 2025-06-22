@@ -128,14 +128,7 @@ in
     user = mkOption {
       type = types.str;
       default = "steam";
-    };
-    steamuser = mkOption {
-      type = types.str;
-      default = "user";
-    };
-    steampassword = mkOption {
-      type = types.str;
-      default = "password";
+      description = "The OS user that the process will run under";
     };
     betaBranch = mkOption {
       type = types.str;
@@ -282,7 +275,7 @@ in
       serverUpdateScript = pkgs.writeScriptBin "motortown_update" ''
         set -xeu
 
-        steamcmd +@sSteamCmdForcePlatformType windows +login ${cfg.steamuser} ${cfg.steampassword} +app_update 1007 validate +app_update ${gameAppId} -beta test -betapassword motortowndedi validate +quit
+        steamcmd +@sSteamCmdForcePlatformType windows +login $STEAM_USERNAME $STEAM_PASSWORD +app_update 1007 validate +app_update ${gameAppId} -beta test -betapassword motortowndedi validate +quit
         cp ${steamPath}/${cfg.steamappsDir}/common/Steamworks\ SDK\ Redist/*.dll "${gamePath}/MotorTown/Binaries/Win64/"
         mkdir -p "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}"
 
