@@ -2,11 +2,29 @@
 
 This flake is for running a dedicated "Motor Town: Behind the Wheel" dedicated server.
 
+## Usage
+
+Use this flake as an input for your flake.
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    motortown-server.url = "github:ASEAN-Motor-Club/motortown-server-flake";
+  };
+  outputs =
+    { self, nixpkgs, motortown-server, ... }@inputs: {
+    # Your flake outputs here
+  }
+}
+```
+
+
 Include `nixosModules.default` as a module in your NixOS configuration.
 
 ```nix
 {
-  ### in configuration.nix
+  ### in configuration.nix, or as a module passed into nixpkgs.lib.nixosSystem
   services.motortown-server = {
     enable = true;
     user = "steam";
