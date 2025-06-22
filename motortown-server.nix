@@ -6,7 +6,7 @@ let
   # Paths
   steamPath = "/home/${cfg.user}/.steam/steam";
   gamePath = "${steamPath}/${cfg.steamappsDir}/common/Motor Town Behind The Wheel - Dedicated Server";
-  ue4ssAddons = ../ue4ss;
+  ue4ssAddons = ./ue4ss;
 
   # Game Settings
   gameAppId = "2223650"; # Steam App ID
