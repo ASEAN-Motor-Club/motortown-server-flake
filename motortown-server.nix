@@ -289,10 +289,25 @@ in
         cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
         cp --no-preserve=mode,ownership -r ${motorTownMods} "${gamePath}/MotorTown/Binaries/Win64/ue4ss/Mods"
       '';
-      serverUpdateScript = pkgs.writeScriptBin "motortown_update" ''
+
+      serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
         set -xeu
 
-        steamcmd +@sSteamCmdForcePlatformType windows +login $STEAM_USERNAME $STEAM_PASSWORD +app_update 1007 validate +app_update ${gameAppId} -beta test -betapassword motortowndedi validate +quit
+        if [ -z "''${STEAM_USERNAME}" ]; then
+          echo "Error: Environment variable STEAM_USERNAME is not set." >&2
+          exit 1
+        fi
+
+        if [ -z "''${STEAM_PASSWORD}" ]; then
+          echo "Error: Environment variable STEAM_PASSWORD is not set." >&2
+          exit 1
+        fi
+
+        steamcmd +@sSteamCmdForcePlatformType windows \
+          +login $STEAM_USERNAME $STEAM_PASSWORD \
+          +app_update 1007 validate \
+          +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
+          +quit
         cp ${steamPath}/${cfg.steamappsDir}/common/Steamworks\ SDK\ Redist/*.dll "${gamePath}/MotorTown/Binaries/Win64/"
         mkdir -p "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}"
 
