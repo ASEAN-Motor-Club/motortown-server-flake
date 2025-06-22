@@ -182,6 +182,10 @@ in
       "steamworks-sdk-redist"
     ];
 
+    environment.systemPackages = [
+      pkgs.steamcmd
+    ];
+
     programs.steam = {
       enable = true;
       extraCompatPackages = with pkgs; [
