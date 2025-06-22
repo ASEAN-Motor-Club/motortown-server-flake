@@ -11,85 +11,87 @@ let
   # Game Settings
   gameAppId = "2223650"; # Steam App ID
   serverConfigType = types.submodule {
-    ServerName = mkOption {
-      type = types.str;
-      default = "MyServer";
-    };
-    ServerMessage = mkOption {
-      type = types.str;
-      default = "Welcome!\nHave fun!";
-    };
-    Password = mkOption {
-      type = types.str;
-      default = "";
-    };
-    MaxPlayers = mkOption {
-      type = types.str;
-      default = 10;
-    };
-    MaxVehiclePerPlayer = mkOption {
-      type = types.str;
-      default = 5;
-    };
-    bAllowPlayerToJoinWithCompanyVehicles = mkOption {
-      type = types.str;
-      default = true;
-    };
-    bAllowCompanyAIDriver = mkOption {
-      type = types.str;
-      default = true;
-    };
-    MaxHousingPlotRentalPerPlayer = mkOption {
-      type = types.ints.unsigned;
-      default = 1;
-    };
-    MaxHousingPlotRentalDays = mkOption {
-      type = types.ints.positive;
-      default = 7;
-    };
-    HousingPlotRentalPriceRatio = mkOption {
-      type = types.numbers.nonnegative;
-      default = 0.1;
-    };
-    bAllowModdedVehicle = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Set this to 'false' to despawn vehicles altered by an external program";
-    };
-    NPCVehicleDensity = mkOption {
-      type = types.numbers.nonnegative;
-      default = 0.5;
-    };
-    NPCPoliceDensity = mkOption {
-      type = types.numbers.nonnegative;
-      default = 0.0;
-    };
-    bEnableHostWebAPIServer = mkOption {
-      type = types.str;
-      default = true;
-    };
-    HostWebAPIServerPassword = mkOption {
-      type = types.str;
-      default = "hackme";
-    };
-    HostWebAPIServerPort = mkOption {
-      type = types.port;
-      default = 8080;
-    };
-    Admins = mkOption {
-      type = types.listOf (types.submodule {
-        options = {
-          UniqueNetId = mkOption {
-            type = types.str;
-            description = "The steam id of the player";
+    options = {
+      ServerName = mkOption {
+        type = types.str;
+        default = "MyServer";
+      };
+      ServerMessage = mkOption {
+        type = types.str;
+        default = "Welcome!\nHave fun!";
+      };
+      Password = mkOption {
+        type = types.str;
+        default = "";
+      };
+      MaxPlayers = mkOption {
+        type = types.ints.positive;
+        default = 10;
+      };
+      MaxVehiclePerPlayer = mkOption {
+        type = types.ints.positive;
+        default = 5;
+      };
+      bAllowPlayerToJoinWithCompanyVehicles = mkOption {
+        type = types.bool;
+        default = true;
+      };
+      bAllowCompanyAIDriver = mkOption {
+        type = types.bool;
+        default = true;
+      };
+      MaxHousingPlotRentalPerPlayer = mkOption {
+        type = types.ints.unsigned;
+        default = 1;
+      };
+      MaxHousingPlotRentalDays = mkOption {
+        type = types.ints.positive;
+        default = 7;
+      };
+      HousingPlotRentalPriceRatio = mkOption {
+        type = types.numbers.nonnegative;
+        default = 0.1;
+      };
+      bAllowModdedVehicle = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Set this to 'false' to despawn vehicles altered by an external program";
+      };
+      NPCVehicleDensity = mkOption {
+        type = types.numbers.nonnegative;
+        default = 0.5;
+      };
+      NPCPoliceDensity = mkOption {
+        type = types.numbers.nonnegative;
+        default = 0.0;
+      };
+      bEnableHostWebAPIServer = mkOption {
+        type = types.bool;
+        default = true;
+      };
+      HostWebAPIServerPassword = mkOption {
+        type = types.str;
+        default = "hackme";
+      };
+      HostWebAPIServerPort = mkOption {
+        type = types.port;
+        default = 8080;
+      };
+      Admins = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            UniqueNetId = mkOption {
+              type = types.str;
+              description = "The steam id of the player";
+            };
+            Nickname = mkOption {
+              type = types.str;
+              description = "The in-game nickname of the player";
+            };
           };
-          Nickname = mkOption {
-            type = types.str;
-            description = "The in-game nickname of the player";
-          };
-        };
-      });
-      default = [];
+        });
+        default = [];
+      };
     };
   };
   dedicatedServerConfigFile = pkgs.writeText "DedicatedServerConfig.json" (builtins.toJSON cfg.dedicatedServerConfig);
@@ -119,6 +121,10 @@ in
 {
   options.services.motortown-server = {
     enable = lib.mkEnableOption "Enable Module";
+    enableMods = mkOption {
+      type = types.bool;
+      default = false;
+    };
     user = mkOption {
       type = types.str;
       default = "steam";
