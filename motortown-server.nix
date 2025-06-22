@@ -92,10 +92,9 @@ let
       default = [];
     };
   };
-  dedicatedServerConfigFile = pkgs.writeText "DedicatedServerConfig.json" (toJson cfg.dedicatedServerConfig);
-  serverConfig = builtins.fromJSON (builtins.readFile ../config/DedicatedServerConfig_weekday.json);
-  apiPassword = serverConfig.HostWebAPIServerPassword;
-  apiPort = serverConfig.HostWebAPIServerPort;
+  dedicatedServerConfigFile = pkgs.writeText "DedicatedServerConfig.json" (builtins.toJson cfg.dedicatedServerConfig);
+  apiPassword = cfg.dedicatedServerConfig.HostWebAPIServerPassword;
+  apiPort = cfg.dedicatedServerConfig.HostWebAPIServerPort;
 
   # Restore $ sign for variable
   serverRestartMessageParam = builtins.replaceStrings
