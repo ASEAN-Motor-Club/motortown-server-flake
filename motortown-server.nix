@@ -125,6 +125,19 @@ in
       type = types.bool;
       default = false;
     };
+    openFirewall = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Open the require ports for the game server";
+    };
+    port = mkOption {
+      type = types.int;
+      default = 7777;
+    };
+    queryPort = mkOption {
+      type = types.int;
+      default = 27015;
+    };
     user = mkOption {
       type = types.str;
       default = "steam";
@@ -154,6 +167,10 @@ in
   };
 
   config = mkIf cfg.enable {
+    networking.firewall = lib.mkIf cfg.openFirewall {
+      allowedTCPPorts = [cfg.port cfg.queryPort];
+      allowedUDPPorts = [cfg.port cfg.queryPort];
+    };
     systemd.services.motortown-server = {
       wantedBy = [ "multi-user.target" ]; 
       after = [ "network.target" ];
@@ -173,7 +190,7 @@ in
       };
       script = ''
         cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "${gamePath}/DedicatedServerConfig.json"
-        ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "${gamePath}/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=7777 -QueryPort=27015
+        ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "${gamePath}/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';
     };
 
