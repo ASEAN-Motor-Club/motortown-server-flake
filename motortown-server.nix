@@ -5,7 +5,6 @@ let
 
   # Paths
   steamPath = "/home/${cfg.user}/.steam/steam";
-  gamePath = "${steamPath}/${cfg.steamappsDir}/common/Motor Town Behind The Wheel - Dedicated Server";
   ue4ssAddons = ./ue4ss;
 
   # Game Settings
@@ -117,6 +116,39 @@ let
     rev = "d997964adb06db0eeaaa9e0fa9fbb082e2528b23";
     hash = "sha256-0NNbotUeODwkO5DdY+6oricT/4pYmIPQGRJVd5AHIus=";
   };
+
+  installModsScript = ''
+    cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+    cp --no-preserve=mode,ownership -r ${motorTownMods} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+    chown -R ${cfg.user}:modders "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+    chmod -R 770 "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+  '';
+
+  serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
+    set -xeu
+
+    if [ -z "''${STEAM_USERNAME}" ]; then
+      echo "Error: Environment variable STEAM_USERNAME is not set." >&2
+      exit 1
+    fi
+
+    if [ -z "''${STEAM_PASSWORD}" ]; then
+      echo "Error: Environment variable STEAM_PASSWORD is not set." >&2
+      exit 1
+    fi
+
+    ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
+      +force_install_dir $STATE_DIRECTORY \
+      +login $STEAM_USERNAME $STEAM_PASSWORD \
+      +app_update 1007 validate \
+      +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
+      +quit
+    cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    mkdir -p "$STATE_DIRECTORY/compatdata"
+    ${if cfg.enableMods then installModsScript else ""}
+  '';
 in
 {
   options.services.motortown-server = {
@@ -151,10 +183,6 @@ in
       type = types.str;
       default = "motortowndedi";
     };
-    steamappsDir = mkOption {
-      type = types.str;
-      default = "Steamapps";
-    };
     restartSchedule = mkOption {
       type = types.str;
       default = "Mon,Sat *-*-* 07:30:00";
@@ -173,6 +201,10 @@ in
       type = serverConfigType;
       description = "DedicatedServerConfig.json. See the README in the dedi files.";
       default = null;
+    };
+    credentialsFile = mkOption {
+      type = types.path;
+      description = "An environment file containing STEAM_USERNAME and STEAM_PASSWORD";
     };
   };
 
@@ -210,20 +242,23 @@ in
       description = "Motortown Dedicated Server";
       environment = {
         STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
-        STEAM_COMPAT_DATA_PATH = "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}";
         WINEDLLOVERRIDES = (if cfg.enableMods then "version=n,b" else "");
       };
       restartIfChanged = false;
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
+        Group = "modders";
         Restart = "always";
-        EnvironmentFile = config.system.build.setEnvironment;
+        EnvironmentFile = cfg.credentialsFile;
         KillSignal = "SIGKILL";
+        StateDirectory = "motortown-server";
       };
       script = ''
-        cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "${gamePath}/DedicatedServerConfig.json"
-        ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "${gamePath}/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
+        ${serverUpdateScript}/bin/motortown-update
+        cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
+        STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata" \
+          ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';
     };
 
@@ -315,41 +350,7 @@ in
       wantedBy = [ "timers.target" ];
     };
 
-    environment.systemPackages = let
-      installModsScript = ''
-        cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "${gamePath}/MotorTown/Binaries/Win64/"
-        cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "${gamePath}/MotorTown/Binaries/Win64/"
-        cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
-        cp --no-preserve=mode,ownership -r ${motorTownMods} "${gamePath}/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-        chown -R ${cfg.user}:modders "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
-        chmod -R 770 "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
-      '';
-
-      serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
-        set -xeu
-
-        if [ -z "''${STEAM_USERNAME}" ]; then
-          echo "Error: Environment variable STEAM_USERNAME is not set." >&2
-          exit 1
-        fi
-
-        if [ -z "''${STEAM_PASSWORD}" ]; then
-          echo "Error: Environment variable STEAM_PASSWORD is not set." >&2
-          exit 1
-        fi
-
-        ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
-          +login $STEAM_USERNAME $STEAM_PASSWORD \
-          +app_update 1007 validate \
-          +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
-          +quit
-        cp ${steamPath}/${cfg.steamappsDir}/common/Steamworks\ SDK\ Redist/*.dll "${gamePath}/MotorTown/Binaries/Win64/"
-        mkdir -p "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}"
-
-        ${if cfg.enableMods then installModsScript else ""}
-      '';
-    in [
-      serverUpdateScript
+    environment.systemPackages = [
       pkgs.steamcmd
     ];
   };
