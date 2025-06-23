@@ -122,8 +122,6 @@ let
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${motorTownMods} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    chown -R ${cfg.user}:modders "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    chmod -R 770 "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
   '';
 
   serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
@@ -146,7 +144,6 @@ let
       +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
       +quit
     cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-    mkdir -p "$STATE_DIRECTORY/compatdata"
     ${if cfg.enableMods then installModsScript else ""}
   '';
 in
@@ -255,8 +252,12 @@ in
         StateDirectory = "motortown-server";
       };
       script = ''
-        ${serverUpdateScript}/bin/motortown-update
-        cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
+        set -xeu
+        if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
+          ${serverUpdateScript}/bin/motortown-update
+          cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
+        fi
+        mkdir -p "$STATE_DIRECTORY/compatdata"
         STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata" \
           ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';

@@ -27,8 +27,10 @@ Include `nixosModules.default` as a module in your NixOS configuration.
   ### in configuration.nix, or as a module passed into nixpkgs.lib.nixosSystem
   services.motortown-server = {
     enable = true;
+    enableMods = false;
     user = "steam";
     openFirewall = true;
+    credentialsFile = /path/to/dotenv/file;
     dedicatedServerConfig =  {
       ServerName = "Test Server";
       ServerMessage = "Welcome";
@@ -61,6 +63,7 @@ Include `nixosModules.default` as a module in your NixOS configuration.
 }
 ```
 
+
 ## Bootstraping
 
 Before you can run this service successfully, you must first run `motortown-update` using the user that you have specified.
@@ -71,4 +74,11 @@ If you have enabled mods, this step will also install UE4SS and the mods.
 You also have to run `steam` at least once before the dedicated server can launch successfully.
 
 This process can be automated using a oneshot systemd service, which is left as an exercise for the reader.
+
+
+## Updating the Dedicated Server
+
+By default, restarting the service will not update the server.
+To force an update, delete `/var/lib/motortown-server/DedicatedServerConfig.json`, then restart the server.
+The missing file would be detected, which triggers the update.
 
