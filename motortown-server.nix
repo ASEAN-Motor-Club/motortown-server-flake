@@ -257,6 +257,8 @@ in
           cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         fi
         mkdir -p "$STATE_DIRECTORY/compatdata"
+        mkdir -p "$STATE_DIRECTORY/run"
+        XDG_RUNTIME_DIR="$STATE_DIRECTORY/run" \
         STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata" \
           ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';
