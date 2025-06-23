@@ -140,7 +140,7 @@ let
     ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
       +force_install_dir $STATE_DIRECTORY \
       +login $STEAM_USERNAME $STEAM_PASSWORD \
-      +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
+      +app_update ${gameAppId} -beta ${cfg.betaBranch} -betapassword ${cfg.betaBranchPassword} validate \
       +quit
     cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     ${if cfg.enableMods then installModsScript else ""}
@@ -173,7 +173,7 @@ in
     };
     betaBranch = mkOption {
       type = types.str;
-      default = "test";
+      default = "beta";
     };
     betaBranchPassword = mkOption {
       type = types.str;
