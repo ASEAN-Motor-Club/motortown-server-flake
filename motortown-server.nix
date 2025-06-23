@@ -205,9 +205,9 @@ in
       after = [ "network.target" ];
       description = "Motortown Dedicated Server";
       environment = {
-        STEAM_COMPAT_CLIENT_INSTALL_PATH=steamPath;
-        STEAM_COMPAT_DATA_PATH="${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}";
-        WINEDLLOVERRIDES="version=n,b";
+        STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
+        STEAM_COMPAT_DATA_PATH = "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}";
+        WINEDLLOVERRIDES = (when cfg.enableMods "version=n,b");
       };
       restartIfChanged = false;
       serviceConfig = {
