@@ -321,8 +321,8 @@ in
         cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "${gamePath}/MotorTown/Binaries/Win64/"
         cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
         cp --no-preserve=mode,ownership -r ${motorTownMods} "${gamePath}/MotorTown/Binaries/Win64/ue4ss/Mods"
-        chgrp -R modders "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
-        chmod -R 660 "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
+        chown -R ${cfg.user}:modders "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
+        chmod -R 770 "${gamePath}/MotorTown/Binaries/Win64/ue4ss"
       '';
 
       serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
