@@ -200,7 +200,9 @@ in
       protontricks.enable = true;
     };
 
-    users.groups.modders = {};
+    users.groups.modders = {
+      members = [ cfg.user ];
+    };
 
     systemd.services.motortown-server = {
       wantedBy = [ "multi-user.target" ]; 
