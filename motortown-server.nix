@@ -140,7 +140,6 @@ let
     ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
       +force_install_dir $STATE_DIRECTORY \
       +login $STEAM_USERNAME $STEAM_PASSWORD \
-      +app_update 1007 validate \
       +app_update ${gameAppId} -beta test -betapassword motortowndedi validate \
       +quit
     cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
