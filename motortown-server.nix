@@ -207,7 +207,7 @@ in
       environment = {
         STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
         STEAM_COMPAT_DATA_PATH = "${steamPath}/${cfg.steamappsDir}/compatdata/${gameAppId}";
-        WINEDLLOVERRIDES = (when cfg.enableMods "version=n,b");
+        WINEDLLOVERRIDES = (if cfg.enableMods then "version=n,b" else "");
       };
       restartIfChanged = false;
       serviceConfig = {
