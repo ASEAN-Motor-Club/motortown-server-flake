@@ -249,6 +249,7 @@ in
         EnvironmentFile = cfg.credentialsFile;
         KillSignal = "SIGKILL";
         StateDirectory = "motortown-server";
+        StateDirectoryMode = "770";
       };
       script = ''
         set -xeu
