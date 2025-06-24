@@ -66,15 +66,8 @@ Include `nixosModules.default` as a module in your NixOS configuration.
 
 ## Bootstraping
 
-Before you can run this service successfully, you must first run `motortown-update` using the user that you have specified.
-You must export `STEAM_USERNAME` and `STEAM_PASSWORD` environment variables.
-This will run steamcmd to install the dedicated server.
-If you have enabled mods, this step will also install UE4SS and the mods.
-
-You also have to run `steam` at least once before the dedicated server can launch successfully.
-
-This process can be automated using a oneshot systemd service, which is left as an exercise for the reader.
-
+Before you can run this service successfully, you have to run `steam` at least
+once under the `user` you provided, in order for the dedicated server to launch successfully.
 
 ## Updating the Dedicated Server
 
