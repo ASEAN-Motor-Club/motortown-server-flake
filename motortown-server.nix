@@ -105,7 +105,7 @@ let
 
   # UE4SS Mod
   ue4ss = pkgs.fetchzip {
-    url = "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-428-g65beeb1.zip";
+    url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
     hash = "sha256-xFax9HIaSspJLfsJ/glAf25/x4jID1+xMIlmpbBcMMc=";
     stripRoot = false;
   };
