@@ -110,18 +110,27 @@ let
     stripRoot = false;
   };
 
-  motorTownMods = pkgs.fetchFromGitHub {
-    owner = "drpsyko101";
-    repo = "MotorTownMods";
-    rev = "d997964adb06db0eeaaa9e0fa9fbb082e2528b23";
-    hash = "sha256-0NNbotUeODwkO5DdY+6oricT/4pYmIPQGRJVd5AHIus=";
+  motorTownMods = {
+    mod = pkgs.fetchzip {
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/MotorTownMods_v0.5.8.zip";
+      hash = "sha256-dmCZMBvx7+HmANRfqnOusU8DePZZ0d2Ioun2ZIl0XUo=";
+      stripRoot = false;
+    };
+    shared = pkgs.fetchzip {
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/shared.zip";
+      hash = "sha256-iZprhOq/HQUmKYSlxaPQTXisbP4BD+DMAdDhb+93GfI=";
+      stripRoot = false;
+    };
   };
+
 
   installModsScript = ''
     cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    cp --no-preserve=mode,ownership -r ${motorTownMods} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+    cp --no-preserve=mode,ownership -r ${motorTownMods.mod}/MotorTownMods "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods"
+    cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/shared/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
   '';
 
   serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
