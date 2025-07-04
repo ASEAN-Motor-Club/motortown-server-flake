@@ -5,7 +5,6 @@ let
 
   # Paths
   steamPath = "/home/${cfg.user}/.steam/steam";
-  ue4ssAddons = ./ue4ss;
 
   # Game Settings
   gameAppId = "2223650"; # Steam App ID
@@ -103,43 +102,6 @@ let
     [ "$" ]
     (lib.strings.escapeURL cfg.restartMessage);
 
-  # Prefetch with:
-  # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
-
-  # UE4SS Mod
-  ue4ss = pkgs.fetchzip {
-    url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
-    hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
-    stripRoot = false;
-  };
-
-  motorTownMods = {
-    mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/MotorTownMods_v0.5.11.zip";
-      hash = "sha256-2NTfIlrlqpbqsGwdB1kLH87/9JtHw1okyhUgfhajM9o=";
-    };
-    shared = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/shared.zip";
-      hash = "sha256-Ua07JRi5IecDqy89a2+Oqz2qN5lafHQSj0GfcnjRRxk=";
-    };
-  };
-  installModsScript =''
-    set -xeu
-    STATE_DIRECTORY=/var/lib/${cfg.stateDirectory}
-    rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    cp --no-preserve=mode,ownership -r ${./shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
-  '';
-
-  postInstallScriptBin = pkgs.writeScriptBin "post-install" ''
-    ${if cfg.enableMods then installModsScript else ""}
-    ${cfg.postInstallScript}
-  '';
-
   serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
     set -xeu
 
@@ -164,7 +126,6 @@ in
 {
   options.services.motortown-server = {
     enable = lib.mkEnableOption "motortown server";
-    enableMods = lib.mkEnableOption "mods";
     postInstallScript = mkOption {
       type = types.str;
       default = "";
@@ -264,7 +225,6 @@ in
       description = "Motortown Dedicated Server";
       environment = {
         STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
-        WINEDLLOVERRIDES = if cfg.enableMods then "version=n,b" else "";
       } // cfg.environment;
       restartIfChanged = false;
       serviceConfig = {
@@ -277,15 +237,16 @@ in
         StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
       };
-      script = ''
-        set -xeu
+      preStart = ''
         if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
           ${lib.getExe serverUpdateScript}
-          ${lib.getExe postInstallScriptBin}
+          ${cfg.postInstallScript}
           cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         fi
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
+      '';
+      script = ''
         XDG_RUNTIME_DIR="$STATE_DIRECTORY/run" \
         STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata" \
           ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
@@ -382,7 +343,6 @@ in
 
     users.users.${cfg.user}.packages = [
       pkgs.steamcmd
-      postInstallScriptBin
     ];
   };
 }
