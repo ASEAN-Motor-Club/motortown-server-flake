@@ -103,34 +103,41 @@ let
     [ "$" ]
     (lib.strings.escapeURL cfg.restartMessage);
 
+  # Prefetch with:
+  # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
+
   # UE4SS Mod
   ue4ss = pkgs.fetchzip {
     url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
-    hash = "sha256-xFax9HIaSspJLfsJ/glAf25/x4jID1+xMIlmpbBcMMc=";
+    hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
     stripRoot = false;
   };
 
   motorTownMods = {
     mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/MotorTownMods_v0.5.8.zip";
-      hash = "sha256-dmCZMBvx7+HmANRfqnOusU8DePZZ0d2Ioun2ZIl0XUo=";
-      stripRoot = false;
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/MotorTownMods_v0.5.11.zip";
+      hash = "sha256-2NTfIlrlqpbqsGwdB1kLH87/9JtHw1okyhUgfhajM9o=";
     };
     shared = pkgs.fetchzip {
       url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/shared.zip";
-      hash = "sha256-iZprhOq/HQUmKYSlxaPQTXisbP4BD+DMAdDhb+93GfI=";
-      stripRoot = false;
+      hash = "sha256-Ua07JRi5IecDqy89a2+Oqz2qN5lafHQSj0GfcnjRRxk=";
     };
   };
-
-
-  installModsScript = ''
-    cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+  installModsScript =''
+    set -xeu
+    STATE_DIRECTORY=/var/lib/${cfg.stateDirectory}
+    rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+    cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.mod}/MotorTownMods "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/shared/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
+    cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+    cp --no-preserve=mode,ownership -r ${./shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
+  '';
+
+  postInstallScriptBin = pkgs.writeScriptBin "post-install" ''
+    ${if cfg.enableMods then installModsScript else ""}
+    ${cfg.postInstallScript}
   '';
 
   serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
@@ -152,15 +159,15 @@ let
       +app_update ${gameAppId} -beta ${cfg.betaBranch} -betapassword ${cfg.betaBranchPassword} validate \
       +quit
     cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-    ${if cfg.enableMods then installModsScript else ""}
   '';
 in
 {
   options.services.motortown-server = {
-    enable = lib.mkEnableOption "Enable Module";
-    enableMods = mkOption {
-      type = types.bool;
-      default = false;
+    enable = lib.mkEnableOption "motortown server";
+    enableMods = lib.mkEnableOption "mods";
+    postInstallScript = mkOption {
+      type = types.str;
+      default = "";
     };
     openFirewall = mkOption {
       type = types.bool;
@@ -179,6 +186,11 @@ in
       type = types.str;
       default = "steam";
       description = "The OS user that the process will run under";
+    };
+    stateDirectory = mkOption {
+      type = types.str;
+      default = "motortown-server";
+      description = "The path where the server will be installed (inside /var/lib)";
     };
     betaBranch = mkOption {
       type = types.str;
@@ -206,6 +218,11 @@ in
       type = serverConfigType;
       description = "DedicatedServerConfig.json. See the README in the dedi files.";
       default = null;
+    };
+    environment = mkOption {
+      type = types.attrsOf types.str;
+      description = "The runtime environment";
+      default = {};
     };
     credentialsFile = mkOption {
       type = types.path;
@@ -247,8 +264,8 @@ in
       description = "Motortown Dedicated Server";
       environment = {
         STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
-        WINEDLLOVERRIDES = (if cfg.enableMods then "version=n,b" else "");
-      };
+        WINEDLLOVERRIDES = if cfg.enableMods then "version=n,b" else "";
+      } // cfg.environment;
       restartIfChanged = false;
       serviceConfig = {
         Type = "simple";
@@ -257,13 +274,14 @@ in
         Restart = "always";
         EnvironmentFile = cfg.credentialsFile;
         KillSignal = "SIGKILL";
-        StateDirectory = "motortown-server";
+        StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
       };
       script = ''
         set -xeu
         if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
-          ${serverUpdateScript}/bin/motortown-update
+          ${lib.getExe serverUpdateScript}
+          ${lib.getExe postInstallScriptBin}
           cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         fi
         mkdir -p "$STATE_DIRECTORY/compatdata"
@@ -362,8 +380,9 @@ in
       wantedBy = [ "timers.target" ];
     };
 
-    environment.systemPackages = [
+    users.users.${cfg.user}.packages = [
       pkgs.steamcmd
+      postInstallScriptBin
     ];
   };
 }
