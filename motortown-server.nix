@@ -127,12 +127,12 @@ in
 {
   options.services.motortown-server = {
     enable = lib.mkEnableOption "motortown server";
-    enableMods = lib.mkEnableOption "motortown server mods";
+    enableMods = lib.mkEnableOption "mods";
     postInstallScript = mkOption {
       type = types.str;
       default = if cfg.enableMods
         then lib.getExe mods.installModsScriptBin
-        else nil;
+        else "";
     };
     openFirewall = mkOption {
       type = types.bool;
@@ -229,6 +229,7 @@ in
       description = "Motortown Dedicated Server";
       environment = {
         STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
+        WINEDLLOVERRIDES = if cfg.enableMods then "version=n,b" else "";
       } // cfg.environment;
       restartIfChanged = false;
       serviceConfig = {

@@ -32,5 +32,5 @@
     cp --no-preserve=mode,ownership -r ${./shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
   '';
 in {
-  inherit installModsScriptBin
+  inherit installModsScriptBin;
 }
