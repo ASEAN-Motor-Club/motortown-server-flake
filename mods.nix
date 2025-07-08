@@ -13,12 +13,12 @@
 
   motorTownMods = {
     mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/MotorTownMods_v0.5.11.zip";
-      hash = "sha256-2NTfIlrlqpbqsGwdB1kLH87/9JtHw1okyhUgfhajM9o=";
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/MotorTownMods_v0.6.2.zip";
+      hash = "sha256-DMjQbTuoUkNpSXiPvecRTwRP2DuB3FLabM8u2VefOEs=";
     };
     shared = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.5/shared.zip";
-      hash = "sha256-Ua07JRi5IecDqy89a2+Oqz2qN5lafHQSj0GfcnjRRxk=";
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/shared.zip";
+      hash = "sha256-AbTfQp5uIi19s6Mn342XIhwOGZmJjbigyMDcDVyMcWQ=";
     };
   };
 
@@ -29,7 +29,7 @@
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    cp --no-preserve=mode,ownership -r ${./shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
+    cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
   '';
 in {
   inherit installModsScriptBin;
