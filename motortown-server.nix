@@ -127,6 +127,7 @@ in
 {
   options.services.motortown-server = {
     enable = lib.mkEnableOption "motortown server";
+    enableMods = lib.mkEnableOption "motortown server mods";
     postInstallScript = mkOption {
       type = types.str;
       default = if cfg.enableMods
