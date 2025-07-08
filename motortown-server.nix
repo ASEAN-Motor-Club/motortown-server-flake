@@ -1,6 +1,7 @@
 { lib, pkgs, config, ...}:
 with lib;
 let
+  mods = import ./mods.nix { inherit pkgs; };
   cfg = config.services.motortown-server;
 
   # Paths
@@ -128,7 +129,9 @@ in
     enable = lib.mkEnableOption "motortown server";
     postInstallScript = mkOption {
       type = types.str;
-      default = "";
+      default = if cfg.enableMods
+        then lib.getExe mods.installModsScriptBin
+        else nil;
     };
     openFirewall = mkOption {
       type = types.bool;
