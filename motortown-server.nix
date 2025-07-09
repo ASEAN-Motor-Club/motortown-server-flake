@@ -193,6 +193,16 @@ in
       type = types.path;
       description = "An environment file containing STEAM_USERNAME and STEAM_PASSWORD";
     };
+    relpServerHost = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "The RELP server host to send logs to";
+    };
+    relpServerPort = mkOption {
+      type = types.int;
+      default = 2514;
+      description = "The RELP server port to send logs to";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -349,5 +359,22 @@ in
     users.users.${cfg.user}.packages = [
       pkgs.steamcmd
     ];
+
+    services.rsyslogd = {
+      enable = true;
+      extraConfig = ''
+        module(load="imfile")
+        module(load="omrelp")
+
+        input(type="imfile"
+          File="/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog/*.log"
+          Tag="mt-server"
+          ruleset="mt-out"
+        )
+        Ruleset(name="mt-out") {
+          action(type="omrelp" target="${cfg.relpServerHost}" port="${toString cfg.relpServerPort}")
+        }
+      '';
+    };
   };
 }
