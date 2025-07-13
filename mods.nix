@@ -13,12 +13,12 @@
 
   motorTownMods = {
     mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/MotorTownMods_v0.6.2.zip";
-      hash = "sha256-DMjQbTuoUkNpSXiPvecRTwRP2DuB3FLabM8u2VefOEs=";
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/MotorTownMods_v0.6.3.zip";
+      hash = "sha256-yDjsbhNP/lJFCb0NA8n6ULS3ZOqHzz50IfsRNwfdIEo=";
     };
     shared = pkgs.fetchzip {
       url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/shared.zip";
-      hash = "sha256-AbTfQp5uIi19s6Mn342XIhwOGZmJjbigyMDcDVyMcWQ=";
+      hash = "sha256-B7dCik5VYPtwO7xgRlCOawzXO+NO9h1D293VcYhWblI=";
     };
   };
 
