@@ -12,6 +12,7 @@
     in
     {
       nixosModules.default = import ./motortown-server.nix;
+      nixosModules.logger = import ./logger.nix;
 
       devShells = eachSystem (pkgs: {
         default = pkgs.mkShell {

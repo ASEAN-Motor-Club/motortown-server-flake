@@ -125,9 +125,13 @@ let
   '';
 in
 {
+  imports = [
+    ./logger.nix
+  ];
   options.services.motortown-server = {
     enable = lib.mkEnableOption "motortown server";
     enableMods = lib.mkEnableOption "mods";
+    enableLogStreaming = lib.mkEnableOption "log streaming";
     postInstallScript = mkOption {
       type = types.str;
       default = if cfg.enableMods
@@ -360,21 +364,10 @@ in
       pkgs.steamcmd
     ];
 
-    services.rsyslogd = {
-      enable = true;
-      extraConfig = ''
-        module(load="imfile")
-        module(load="omrelp")
-
-        input(type="imfile"
-          File="/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog/*.log"
-          Tag="mt-server"
-          ruleset="mt-out"
-        )
-        Ruleset(name="mt-out") {
-          action(type="omrelp" target="${cfg.relpServerHost}" port="${toString cfg.relpServerPort}")
-        }
-      '';
+    services.motortown-server-logger = {
+      enable = cfg.enableLogStreaming;
+      serverLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog";
+      inherit (cfg) relpServerHost relpServerPort;
     };
   };
 }
