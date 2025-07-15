@@ -204,6 +204,7 @@ in
       isNormalUser = true;
       packages = [
         pkgs.steamcmd
+        mods.installModsScriptBin
       ];
     };
 

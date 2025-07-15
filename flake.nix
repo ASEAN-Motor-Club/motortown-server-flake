@@ -24,7 +24,7 @@
           name = "motortown-server-${name}";
           value = {
             autoStart = true;
-            bindMounts.${backendOptions.credentialsFile}.isReadOnly = false;
+            bindMounts.${backendOptions.credentialsFile}.isReadOnly = true;
             bindMounts.${name} = {
               isReadOnly = false;
               mountPoint = "/var/lib/motortown-server";
@@ -50,7 +50,7 @@
             "motortown-server-${name}" = {
               ${hostStateForContainer name} = {
                 d = {
-                  group = "root";
+                  group = "modders";
                   mode = "0755";
                   user = "root";
                 };

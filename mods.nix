@@ -13,8 +13,8 @@
 
   motorTownMods = {
     mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/MotorTownMods_v0.6.3.zip";
-      hash = "sha256-yDjsbhNP/lJFCb0NA8n6ULS3ZOqHzz50IfsRNwfdIEo=";
+      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/MotorTownMods_v0.6.6.zip";
+      hash = "sha256-SY3wYBMWlG6DElaoYRkwqcvRjWQiejBzNGe7syQSRUE=";
     };
     shared = pkgs.fetchzip {
       url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.6/shared.zip";
