@@ -20,28 +20,37 @@
         hostConfig = config;
         cfg = config.services.motortown-server-containers;
         hostStateForContainer = name: "/var/lib/motortown-server-${name}";
+        openPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
+          backendOptions.port backendOptions.queryPort
+        ]) cfg);
         mkContainer = name: backendOptions: {
           name = "motortown-server-${name}";
           value = {
             autoStart = true;
+            restartIfChanged = false;
             bindMounts.${backendOptions.credentialsFile}.isReadOnly = true;
             bindMounts.${name} = {
               isReadOnly = false;
               mountPoint = "/var/lib/motortown-server";
               hostPath = hostStateForContainer name;
             };
-            config = { config, pkgs, lib, ... }: {
+            config = { config, pkgs, lib, ... }: ({
               imports = [
                 self.nixosModules.default
+                hostConfig.services.motortown-server-containers-env
               ];
               services.motortown-server = backendOptions;
-            };
+            });
           };
         };
       in {
         options = {
           services.motortown-server-containers = lib.mkOption {
             type = lib.types.attrsOf (lib.types.submodule (import ./backend-options.nix));
+          };
+          services.motortown-server-containers-env = lib.mkOption {
+            type = lib.types.attrs;
+            default = {};
           };
         };
 
@@ -58,12 +67,8 @@
             };
           }) cfg;
 
-          networking.firewall.allowedTCPPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
-            backendOptions.port backendOptions.queryPort
-          ]) cfg);
-          networking.firewall.allowedUDPPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
-            backendOptions.port backendOptions.queryPort
-          ]) cfg);
+          networking.firewall.allowedTCPPorts = openPorts;
+          networking.firewall.allowedUDPPorts = openPorts;
 
           containers = listToAttrs (mapAttrsToList mkContainer cfg);
         };

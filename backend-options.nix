@@ -88,6 +88,10 @@ let
     enable = mkEnableOption "motortown server";
     enableMods = mkEnableOption "mods";
     enableLogStreaming = mkEnableOption "log streaming";
+    enableExternalMods = mkOption {
+      type = types.attrsOf types.bool;
+      default = {};
+    };
     postInstallScript = mkOption {
       type = types.str;
       default = "";

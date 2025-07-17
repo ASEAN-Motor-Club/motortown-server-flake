@@ -1,8 +1,11 @@
 { lib, pkgs, config, ...}:
 with lib;
 let
-  mods = import ./mods.nix { inherit pkgs; };
   cfg = config.services.motortown-server;
+  mods = import ./mods.nix {
+    inherit pkgs lib;
+    enableExternalMods = cfg.enableExternalMods;
+  };
 
   # Paths
   steamPath = "/home/${cfg.user}/.steam/steam";
