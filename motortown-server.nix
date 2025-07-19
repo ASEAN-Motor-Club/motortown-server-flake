@@ -101,10 +101,10 @@ in
       preStart = ''
         if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
           ${lib.getExe serverUpdateScript}
-          ${if cfg.enableMods then (lib.getExe mods.installModsScriptBin) else ""}
           ${cfg.postInstallScript}
-          cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         fi
+        ${if cfg.enableMods then (lib.getExe mods.installModsScriptBin) else ""}
+        cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
       '';
