@@ -215,6 +215,7 @@ in
       enable = cfg.enableLogStreaming;
       serverLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog";
       modLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Binaries/Win64/ue4ss/UE4SS.log";
+      tag = cfg.logsTag;
       inherit (cfg) relpServerHost relpServerPort;
     };
   };

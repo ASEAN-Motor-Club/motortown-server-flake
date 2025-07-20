@@ -39,7 +39,7 @@
                 self.nixosModules.default
                 hostConfig.services.motortown-server-containers-env
               ];
-              services.motortown-server = backendOptions;
+              services.motortown-server = { logsTag = name; } // backendOptions;
             });
           };
         };

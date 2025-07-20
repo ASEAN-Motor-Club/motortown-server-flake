@@ -24,6 +24,11 @@ in
       default = 2514;
       description = "The RELP server port to send logs to";
     };
+    tag = mkOption {
+      type = types.str;
+      description = "The tag for log lines";
+      default = "mt-server";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -35,13 +40,13 @@ in
 
         input(type="imfile"
           File="${cfg.serverLogsPath + "/*.log"}"
-          Tag="mt-server"
+          Tag="${cfg.tag}"
           ruleset="mt-out"
           addMetadata="on"
         )
         input(type="imfile"
           File="${cfg.modLogsPath}"
-          Tag="mt-server"
+          Tag="${cfg.tag}"
           ruleset="mod-out"
         )
         template(name="with_filename" type="list") {

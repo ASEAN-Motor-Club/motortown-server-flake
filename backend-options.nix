@@ -92,6 +92,10 @@ let
       default = "v0.7.5";
     };
     enableLogStreaming = mkEnableOption "log streaming";
+    logsTag = mkOption {
+      type = types.str;
+      default = "mt-server";
+    };
     enableExternalMods = mkOption {
       type = types.attrsOf types.bool;
       default = {};
