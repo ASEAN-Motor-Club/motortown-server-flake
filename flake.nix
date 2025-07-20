@@ -21,14 +21,14 @@
         cfg = config.services.motortown-server-containers;
         hostStateForContainer = name: "/var/lib/motortown-server-${name}";
         openPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
-          backendOptions.port backendOptions.queryPort
+          backendOptions.motortown-server.port backendOptions.motortown-server.queryPort
         ]) cfg);
         mkContainer = name: backendOptions: {
           name = "motortown-server-${name}";
           value = {
             autoStart = true;
             restartIfChanged = false;
-            bindMounts.${backendOptions.credentialsFile}.isReadOnly = true;
+            bindMounts.${backendOptions.motortown-server.credentialsFile}.isReadOnly = true;
             bindMounts.${name} = {
               isReadOnly = false;
               mountPoint = "/var/lib/motortown-server";
@@ -38,15 +38,24 @@
               imports = [
                 self.nixosModules.default
                 hostConfig.services.motortown-server-containers-env
+                backendOptions.config
               ];
-              services.motortown-server = { logsTag = name; } // backendOptions;
+              services.motortown-server = { logsTag = name; } // backendOptions.motortown-server;
             });
           };
         };
       in {
         options = {
           services.motortown-server-containers = lib.mkOption {
-            type = lib.types.attrsOf (lib.types.submodule (import ./backend-options.nix));
+            type = lib.types.attrsOf (lib.types.submodule {
+              options.config = lib.mkOption {
+                type = lib.types.attrs;
+                default = {};
+              };
+              options.motortown-server = lib.mkOption {
+                type = lib.types.submodule (import ./backend-options.nix);
+              };
+            });
           };
           services.motortown-server-containers-env = lib.mkOption {
             type = lib.types.attrs;
