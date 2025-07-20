@@ -51,6 +51,7 @@ let
     cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
 
     # Paks
+    find $STATE_DIRECTORY/MotorTown/Content/Paks/ -maxdepth 1 -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" -delete
     ${lib.strings.concatStringsSep "\n" externalModsScripts}
     mkdir -p "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer"
     cp --no-preserve=mode,ownership -r ${./mods/Engine.ini} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
