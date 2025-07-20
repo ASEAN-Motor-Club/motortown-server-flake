@@ -10,6 +10,10 @@ in
       type = types.str;
       description = "The path to Saved/ServerLog";
     };
+    modLogsPath = mkOption {
+      type = types.str;
+      description = "The path to UE4SS.log";
+    };
     relpServerHost = mkOption {
       type = types.str;
       default = "127.0.0.1";
@@ -35,6 +39,11 @@ in
           ruleset="mt-out"
           addMetadata="on"
         )
+        input(type="imfile"
+          File="${cfg.modLogsPath}"
+          Tag="mt-server"
+          ruleset="mod-out"
+        )
         template(name="with_filename" type="list") {
           property(name="timestamp" dateFormat="rfc3339")
           constant(value=" ")
@@ -52,6 +61,11 @@ in
             target="${cfg.relpServerHost}"
             port="${toString cfg.relpServerPort}"
             template="with_filename"
+          )
+        }
+        Ruleset(name="mod-out") {
+          action(type="omfile"
+            File="/var/log/UE4SS.log"
           )
         }
       '';

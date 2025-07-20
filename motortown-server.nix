@@ -4,7 +4,7 @@ let
   cfg = config.services.motortown-server;
   mods = import ./mods.nix {
     inherit pkgs lib;
-    enableExternalMods = cfg.enableExternalMods;
+    inherit (cfg) enableExternalMods modVersion;
   };
 
   # Paths
@@ -214,6 +214,7 @@ in
     services.motortown-server-logger = {
       enable = cfg.enableLogStreaming;
       serverLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog";
+      modLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Binaries/Win64/ue4ss/UE4SS.log";
       inherit (cfg) relpServerHost relpServerPort;
     };
   };
