@@ -1,4 +1,4 @@
-{ pkgs, lib, modVersion ? "v0.7.5", enableExternalMods }:
+{ pkgs, lib, modVersion ? "v0.7.5", enableExternalMods, engineIni ? "" }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
@@ -42,6 +42,10 @@ let
       else "")
     enableExternalMods;
 
+  engineIniFile = pkgs.writeText "engine.ini" ''
+[ConsoleVariables]
+${engineIni}'';
+
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
     set -xeu
     cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
@@ -56,7 +60,7 @@ let
     find $STATE_DIRECTORY/MotorTown/Content/Paks/ -maxdepth 1 -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" -delete
     ${lib.strings.concatStringsSep "\n" externalModsScripts}
     mkdir -p "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer"
-    cp --no-preserve=mode,ownership -r ${./mods/Engine.ini} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
+    cp --no-preserve=mode,ownership -r ${engineIniFile} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
   '';
 in {
   inherit installModsScriptBin;

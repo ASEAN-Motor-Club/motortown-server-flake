@@ -4,7 +4,7 @@ let
   cfg = config.services.motortown-server;
   mods = import ./mods.nix {
     inherit pkgs lib;
-    inherit (cfg) enableExternalMods modVersion;
+    inherit (cfg) enableExternalMods engineIni modVersion;
   };
 
   # Paths

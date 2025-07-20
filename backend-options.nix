@@ -100,6 +100,10 @@ let
       type = types.attrsOf types.bool;
       default = {};
     };
+    engineIni = mkOption {
+      type = types.str;
+      default = "";
+    };
     postInstallScript = mkOption {
       type = types.str;
       default = "";
