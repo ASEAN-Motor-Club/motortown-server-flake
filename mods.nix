@@ -1,4 +1,4 @@
-{ pkgs, lib, enableExternalMods }:
+{ pkgs, lib, modVersion ? "v0.7.5", enableExternalMods }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
@@ -12,16 +12,29 @@ let
     stripRoot = false;
   };
 
-  motorTownMods = {
-    mod = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.7/MotorTownMods_v0.7.5.zip";
-      hash = "sha256-cqPD5IKI/SrDOZll+zG8Kh84FdK0M7Cc9IMeaItdfws=";
+  motorTownModsVersions = {
+    "v0.7.5" = {
+      mod = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.7/MotorTownMods_v0.7.5.zip";
+        hash = "sha256-cqPD5IKI/SrDOZll+zG8Kh84FdK0M7Cc9IMeaItdfws=";
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.7/shared.zip";
+        hash = "sha256-uxx535IN6526iz5EEYHMeoBLurE2nVx5H94s18/xPB4=";
+      };
     };
-    shared = pkgs.fetchzip {
-      url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.7/shared.zip";
-      hash = "sha256-uxx535IN6526iz5EEYHMeoBLurE2nVx5H94s18/xPB4=";
+    "v0.8.0" = {
+      mod = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.0.zip";
+        hash = "sha256-/mqDnrqlttluWbjAToxbyDohQB31JGErzvF/LVu1PoE=";
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
     };
   };
+  motorTownMods = motorTownModsVersions.${modVersion};
 
   externalModsScripts = lib.attrsets.mapAttrsToList
     (name: enable: "cp --no-preserve=mode,ownership -r ${./mods}/${name}.pak $STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak")

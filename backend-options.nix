@@ -87,6 +87,10 @@ let
   backendOptions = {
     enable = mkEnableOption "motortown server";
     enableMods = mkEnableOption "mods";
+    modVersion = mkOption {
+      type = types.str;
+      default = "v0.7.5";
+    };
     enableLogStreaming = mkEnableOption "log streaming";
     enableExternalMods = mkOption {
       type = types.attrsOf types.bool;
