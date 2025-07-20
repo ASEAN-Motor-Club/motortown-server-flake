@@ -37,7 +37,9 @@ let
   motorTownMods = motorTownModsVersions.${modVersion};
 
   externalModsScripts = lib.attrsets.mapAttrsToList
-    (name: enable: "cp --no-preserve=mode,ownership -r ${./mods}/${name}.pak $STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak")
+    (name: enable: if enable
+      then "cp --no-preserve=mode,ownership -r ${./mods}/${name}.pak $STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
+      else "")
     enableExternalMods;
 
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
