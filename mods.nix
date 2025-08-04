@@ -63,6 +63,16 @@ let
         hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
       };
     };
+    "v0.8.8" = {
+      mod = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.8.zip";
+        hash = "sha256-D4sjgEED8KL656RVWnCuHWsgmbRSIz/JYBwgQc0sKV4=";
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
