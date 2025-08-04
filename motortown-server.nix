@@ -167,6 +167,7 @@ in
     };
 
     systemd.services.motortown-server-restart = {
+      enable = cfg.restartSchedule != null;
       description = "Motortown Dedicated Server Restart";
       environment = {
       };
@@ -179,11 +180,12 @@ in
       };
       script = ''
         source ${config.system.build.setEnvironment}
-        systemctl reboot
+        systemctl restart motortown-server
       '';
     };
 
     systemd.timers.motortown-server-restart = {
+      enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
       timerConfig = {
         OnCalendar = cfg.restartSchedule;
@@ -194,6 +196,7 @@ in
     };
 
     systemd.timers.motortown-server-restart-announcement = {
+      enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
       timerConfig = {
         OnCalendar = cfg.restartAnnouncementSchedule;
