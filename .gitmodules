@@ -1,0 +1,4 @@
+[submodule "MotorTownMods"]
+	path = MotorTownMods
+	url = git@github.com:drpsyko101/MotorTownMods.git
+	branch = v0.8
