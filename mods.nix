@@ -100,7 +100,7 @@ let
           hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
         };
         patches = [
-          ./event_owner.patch
+          ./patches/event_owner.patch
         ];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
