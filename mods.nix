@@ -101,6 +101,8 @@ let
         };
         patches = [
           ./patches/event_owner.patch
+          ./patches/sign_contract_webhook.patch
+          ./patches/batch_webhook.patch
         ];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
