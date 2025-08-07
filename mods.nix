@@ -1,4 +1,4 @@
-{ pkgs, lib, modVersion ? "v0.7.5", enableExternalMods, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v0.8.9-amc", enableExternalMods ? {}, engineIni ? "" }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
@@ -63,13 +63,54 @@ let
         hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
       };
     };
-    "v0.8.8" = {
+    "v0.8.9" = {
       mod = pkgs.fetchzip {
-        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.8.zip";
-        hash = "sha256-D4sjgEED8KL656RVWnCuHWsgmbRSIz/JYBwgQc0sKV4=";
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
+        hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
       };
       shared = pkgs.fetchzip {
         url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
+    "v0.9.1" = {
+      mod = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/MotorTownMods_v0.9.1.zip";
+        hash = "sha256-lXIg8J/KTeD71a4k34/DLXkjqvGK1B3SEKqQ69+SWqk=";
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
+    "v0.9.2" = {
+      mod = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/MotorTownMods_v0.9.2.zip";
+        hash = "sha256-b0cpb3CHawL+iCvCOWtKQdMp6ptLV7N62nQW3EhTiUU=";
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
+    "v0.8.9-amc" = {
+      mod = pkgs.applyPatches {
+        src = pkgs.fetchzip {
+          url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
+          hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
+        };
+        patches = [
+          ./event_owner.patch
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
         hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
       };
     };
@@ -94,6 +135,7 @@ ${engineIni}'';
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
     cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+    # cp --no-preserve=mode,ownership -r ${./MotorTownMods/Scripts}/*.lua "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods/Scripts"
     cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
 
     # Paks
@@ -103,5 +145,5 @@ ${engineIni}'';
     cp --no-preserve=mode,ownership -r ${engineIniFile} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
   '';
 in {
-  inherit installModsScriptBin;
+  inherit installModsScriptBin motorTownMods;
 }

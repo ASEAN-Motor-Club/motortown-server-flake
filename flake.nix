@@ -87,6 +87,7 @@
       devShells = eachSystem (pkgs: {
         default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            (pkgs.writeShellScriptBin "deploy-scripts" (builtins.readFile ./deploy_mod.sh))
             # Add development dependencies here
           ];
         };
