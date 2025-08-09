@@ -103,6 +103,7 @@ let
           ./patches/event_owner.patch
           ./patches/sign_contract_webhook.patch
           ./patches/batch_webhook.patch
+          ./patches/money_transfer.patch
         ];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
