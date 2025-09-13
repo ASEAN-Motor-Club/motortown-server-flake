@@ -1,0 +1,60 @@
+diff --git a/Scripts/PlayerManager.lua b/Scripts/PlayerManager.lua
+index 2484e27..4778766 100644
+--- a/Scripts/PlayerManager.lua
++++ b/Scripts/PlayerManager.lua
+@@ -89,6 +89,16 @@ local function TransferMoneyToPlayer(uniqueId, amount, message)
+ end
+ 
+ 
++local function PlayerSendChat(uniqueId, message)
++  local PC = GetPlayerControllerFromUniqueId(uniqueId)
++  if not PC:IsValid() then return false end
++  ExecuteInGameThread(function()
++    PC:ServerSendChat(message, 0)
++  end)
++  return true
++end
++
++
+ ---Get my current pawn transform
+ ---@return FVector? location
+ ---@return FRotator? rotation
+@@ -149,6 +159,20 @@ local function HandleTransferMoneyToPlayer(session)
+   return json.stringify { error = "Invalid payload" }, nil, 400
+ end
+ 
++local function HandlePlayerSendChat(session)
++  local playerId = session.pathComponents[2]
++  if not playerId then
++    return json.stringify { error = string.format("Invalid player ID %s", playerId) }, nil, 400
++  end
++
++  local data = json.parse(session.content)
++  if data and data.Message then
++    PlayerSendChat(playerId, data.Message)
++    return nil, nil, 204
++  end
++  return json.stringify { error = "Invalid payload" }, nil, 400
++end
++
+ ---Handle request to teleport player
+ ---@type RequestPathHandler
+ local function HandleTeleportPlayer(session)
+@@ -216,4 +240,5 @@ return {
+   PlayerStateToTable = PlayerStateToTable,
+   HandleTeleportPlayer = HandleTeleportPlayer,
+   HandleTransferMoneyToPlayer = HandleTransferMoneyToPlayer,
++  HandlePlayerSendChat = HandlePlayerSendChat,
+ }
+diff --git a/Scripts/main.lua b/Scripts/main.lua
+index 775b5ab..e9fcfd8 100644
+--- a/Scripts/main.lua
++++ b/Scripts/main.lua
+@@ -45,6 +45,7 @@ local function LoadWebserver()
+     server.registerHandler("/players", "GET", playerManager.HandleGetPlayerStates)
+     server.registerHandler("/players/*/teleport", "POST", playerManager.HandleTeleportPlayer)
+     server.registerHandler("/players/*/money", "POST", playerManager.HandleTransferMoneyToPlayer)
++    server.registerHandler("/players/*/chat", "POST", playerManager.HandlePlayerSendChat)
+     server.registerHandler("/players/*", "GET", playerManager.HandleGetPlayerStates)
+ 
+     -- Event management

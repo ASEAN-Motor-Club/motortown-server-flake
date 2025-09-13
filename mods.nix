@@ -104,6 +104,56 @@ let
           ./patches/sign_contract_webhook.patch
           ./patches/batch_webhook.patch
           ./patches/money_transfer.patch
+          ./patches/passenger_arrived_webhook.patch
+          ./patches/contract_arrived_webhook.patch
+          ./patches/cargo_dumped_webhook.patch
+          ./patches/fix_teleport_player.patch
+          ./patches/set_money_webhook.patch
+          ./patches/tow_request_arrived_webhook.patch
+          ./patches/join_leave_event.patch
+          ./patches/player_send_chat.patch
+          ./patches/fix_vehicle_serialization.patch
+          ./patches/pull_webhook.patch
+          ./patches/safe_hooks.patch
+          ./patches/guard_transfer_money.patch
+          ./patches/tp_no_vehicles.patch
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
+    "v0.8.9-test" = {
+      mod = pkgs.applyPatches {
+        src = pkgs.fetchzip {
+          url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
+          hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
+        };
+        patches = [
+          ./patches/event_owner.patch
+          ./patches/sign_contract_webhook.patch
+          ./patches/batch_webhook.patch
+          ./patches/money_transfer.patch
+          ./patches/passenger_arrived_webhook.patch
+          ./patches/contract_arrived_webhook.patch
+          ./patches/cargo_dumped_webhook.patch
+          ./patches/fix_teleport_player.patch
+          ./patches/set_money_webhook.patch
+          ./patches/tow_request_arrived_webhook.patch
+          ./patches/join_leave_event.patch
+          ./patches/player_send_chat.patch
+          ./patches/fix_vehicle_serialization.patch
+          ./patches/pull_webhook.patch
+          ./patches/safe_hooks.patch
+          ./patches/guard_transfer_money.patch
+          ./patches/tp_no_vehicles.patch
         ];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;

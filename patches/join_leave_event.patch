@@ -1,0 +1,65 @@
+diff --git a/Scripts/EventManager.lua b/Scripts/EventManager.lua
+index 85a538a..7ed4abb 100644
+--- a/Scripts/EventManager.lua
++++ b/Scripts/EventManager.lua
+@@ -522,6 +522,38 @@ local function HandleUpdateEvent(session)
+   return nil, nil, 400
+ end
+ 
++local function HandleJoinEvent(session)
++  local eventGuid = session.pathComponents[2]
++  local content = json.parse(session.content)
++
++  if type(content) == "table" and content.PlayerId then
++    local PC = GetPlayerControllerFromUniqueId(content.PlayerId)
++    if PC:IsValid() then
++      ExecuteInGameThread(function()
++        PC:ServerJoinEvent(StringToGuid(eventGuid))
++      end)
++      return nil, nil, 204
++    end
++  end
++  return nil, nil, 400
++end
++
++local function HandleLeaveEvent(session)
++  local eventGuid = session.pathComponents[2]
++  local content = json.parse(session.content)
++
++  if type(content) == "table" and content.PlayerId then
++    local PC = GetPlayerControllerFromUniqueId(content.PlayerId)
++    if PC:IsValid() then
++      ExecuteInGameThread(function()
++        PC:ServerLeaveEvent(StringToGuid(eventGuid))
++      end)
++      return nil, nil, 204
++    end
++  end
++  return nil, nil, 400
++end
++
+ ---Handle request for event removal
+ ---@type RequestPathHandler
+ local function HandleRemoveEvent(session)
+@@ -539,5 +571,7 @@ return {
+   HandleUpdateEvent = HandleUpdateEvent,
+   HandleCreateNewEvent = HandleCreateNewEvent,
+   HandleChangeEventState = HandleChangeEventState,
+-  HandleRemoveEvent = HandleRemoveEvent
++  HandleRemoveEvent = HandleRemoveEvent,
++  HandleJoinEvent = HandleJoinEvent,
++  HandleLeaveEvent = HandleLeaveEvent,
+ }
+diff --git a/Scripts/main.lua b/Scripts/main.lua
+index 12c1599..3273e31 100644
+--- a/Scripts/main.lua
++++ b/Scripts/main.lua
+@@ -53,6 +53,8 @@ local function LoadWebserver()
+     server.registerHandler("/events", "POST", eventManager.HandleCreateNewEvent)
+     server.registerHandler("/events/*", "GET", eventManager.HandleGetEvents)
+     server.registerHandler("/events/*/state", "POST", eventManager.HandleChangeEventState)
++    server.registerHandler("/events/*/join", "POST", eventManager.HandleJoinEvent)
++    server.registerHandler("/events/*/leave", "POST", eventManager.HandleLeaveEvent)
+     server.registerHandler("/events/*", "POST", eventManager.HandleUpdateEvent)
+     server.registerHandler("/events/*", "DELETE", eventManager.HandleRemoveEvent)
+ 

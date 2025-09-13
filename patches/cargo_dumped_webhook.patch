@@ -1,0 +1,34 @@
+diff --git a/Scripts/CargoManager.lua b/Scripts/CargoManager.lua
+index 6768a2b..13a3782 100644
+--- a/Scripts/CargoManager.lua
++++ b/Scripts/CargoManager.lua
+@@ -458,6 +458,17 @@ webhook.RegisterEventHook(
+   end
+ )
+ 
++webhook.RegisterEventHook(
++  "ServerCargoDumped",
++  function (context, Cargo)
++    local playerId = GetPlayerUniqueId(context:get())
++    return {
++      PlayerId = playerId,
++      Cargo = CargoToTable(Cargo:get())
++    }
++  end
++)
++
+ webhook.RegisterEventHook(
+   "ServerSignContract",
+   function (context, Contract, CompanyGuid)
+diff --git a/Scripts/Webclient.lua b/Scripts/Webclient.lua
+index ba1d689..01335e8 100644
+--- a/Scripts/Webclient.lua
++++ b/Scripts/Webclient.lua
+@@ -20,6 +20,7 @@ local events = {
+     ServerJoinEvent = "/Script/MotorTown.MotorTownPlayerController:ServerJoinEvent",
+     ServerLeaveEvent = "/Script/MotorTown.MotorTownPlayerController:ServerLeaveEvent",
+     ServerCargoArrived = "/Script/MotorTown.MotorTownPlayerController:ServerCargoArrived",
++    ServerCargoDumped = "/Script/MotorTown.MotorTownPlayerController:ServerCargoDumped",
+     ServerSignContract = "/Script/MotorTown.MotorTownPlayerController:ServerSignContract",
+     ServerPassengerArrived = "/Script/MotorTown.MotorTownPlayerController:ServerPassengerArrived",
+     ServerContractCargoDelivered = "/Script/MotorTown.MotorTownPlayerController:ServerContractCargoDelivered",

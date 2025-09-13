@@ -1,0 +1,39 @@
+diff --git a/Scripts/PlayerManager.lua b/Scripts/PlayerManager.lua
+index 0b50886..2484e27 100644
+--- a/Scripts/PlayerManager.lua
++++ b/Scripts/PlayerManager.lua
+@@ -1,4 +1,5 @@
+ local json = require("JsonParser")
++local webhook = require("Webclient")
+ 
+ ---Convert player state to JSON serializable table
+ ---@param playerState AMotorTownPlayerState
+@@ -199,6 +200,16 @@ local function HandleTeleportPlayer(session)
+   return json.stringify { error = "Invalid payload" }, nil, 400
+ end
+ 
++webhook.RegisterEventHook(
++  "ServerSetMoney",
++  function(context, Money)
++    return {
++      PlayerId = GetPlayerUniqueId(context:get()),
++      Money = Money:get()
++    }
++  end
++)
++
+ return {
+   HandleGetPlayerStates = HandleGetPlayerStates,
+   GetMyCurrentTransform = GetMyCurrentTransform,
+diff --git a/Scripts/Webclient.lua b/Scripts/Webclient.lua
+index 01335e8..9468f1c 100644
+--- a/Scripts/Webclient.lua
++++ b/Scripts/Webclient.lua
+@@ -24,6 +24,7 @@ local events = {
+     ServerSignContract = "/Script/MotorTown.MotorTownPlayerController:ServerSignContract",
+     ServerPassengerArrived = "/Script/MotorTown.MotorTownPlayerController:ServerPassengerArrived",
+     ServerContractCargoDelivered = "/Script/MotorTown.MotorTownPlayerController:ServerContractCargoDelivered",
++    ServerSetMoney = "/Script/MotorTown.MotorTownPlayerController:ServerSetMoney",
+ }
+ 
+ ---Send a request to the specified URL

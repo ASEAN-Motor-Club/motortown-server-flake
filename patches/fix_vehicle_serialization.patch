@@ -1,0 +1,13 @@
+diff --git a/Scripts/VehicleManager.lua b/Scripts/VehicleManager.lua
+index 61f289e..3c5123e 100644
+--- a/Scripts/VehicleManager.lua
++++ b/Scripts/VehicleManager.lua
+@@ -594,7 +594,7 @@ local function VehicleAttachmentPartCompToTable(comp)
+   if not comp:IsValid() then return {} end
+ 
+   return {
+-    Net_PartKey = comp.Net_PartKey,
++    Net_PartKey = comp.Net_PartKey:ToString(),
+     Net_PartSlot = comp.Net_PartSlot
+   }
+ end

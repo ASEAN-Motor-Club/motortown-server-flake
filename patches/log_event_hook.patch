@@ -1,0 +1,17 @@
+diff --git a/Scripts/Webclient.lua b/Scripts/Webclient.lua
+index e960356..2bd121f 100644
+--- a/Scripts/Webclient.lua
++++ b/Scripts/Webclient.lua
+@@ -212,10 +212,12 @@ local function RegisterEventHook(event, hookFunction, callback)
+     if isEnabled and eventName then
+         local status, out1, out2 = pcall(function()
+             local preId, postId = RegisterHook(eventName, function(self, ...)
++                LogOutput("INFO", "Event hook start: %s", eventName)
+                 local status, result = pcall(hookFunction, self, ...)
+                 if status then
+                     if result then
+                         CreateEventWebhook(eventName, result, callback)
++                        LogOutput("INFO", "Event hook created: %s", eventName)
+                     end
+                 else
+                     LogOutput("ERROR", "Failed to execute event hook: %s", result)
