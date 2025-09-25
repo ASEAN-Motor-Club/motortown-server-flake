@@ -6,11 +6,18 @@ let
   ue4ssAddons = ./ue4ss;
 
   # UE4SS Mod
-  ue4ss = pkgs.fetchzip {
-    url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
-    hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
-    stripRoot = false;
-  };
+  ue4ss = if modVersion == "v10" then
+    ./UE4SS_v3 else if modVersion != "v0.8.9-amc" then
+    pkgs.fetchzip {
+      url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
+      hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
+      stripRoot = false;
+    } else pkgs.fetchzip {
+      url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental-latest/UE4SS_v3.0.1-532-ge0c4c42.zip";
+      hash = "sha256-z1q1SgLKaRJcUxkNktLVOGq6ayIH6DH628oVy7y20Ik=";
+      stripRoot = false;
+    };
+
 
   motorTownModsVersions = {
     "v0.7.5" = {
@@ -131,6 +138,43 @@ let
       };
     };
     "v0.8.9-test" = {
+      mod = pkgs.applyPatches {
+        src = pkgs.fetchzip {
+          url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
+          hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
+        };
+        patches = [
+          ./patches/event_owner.patch
+          ./patches/sign_contract_webhook.patch
+          ./patches/batch_webhook.patch
+          ./patches/money_transfer.patch
+          ./patches/passenger_arrived_webhook.patch
+          ./patches/contract_arrived_webhook.patch
+          ./patches/cargo_dumped_webhook.patch
+          ./patches/fix_teleport_player.patch
+          ./patches/set_money_webhook.patch
+          ./patches/tow_request_arrived_webhook.patch
+          ./patches/join_leave_event.patch
+          ./patches/player_send_chat.patch
+          ./patches/fix_vehicle_serialization.patch
+          ./patches/pull_webhook.patch
+          ./patches/safe_hooks.patch
+          ./patches/guard_transfer_money.patch
+          ./patches/tp_no_vehicles.patch
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = pkgs.fetchzip {
+        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
+        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      };
+    };
+    "v10" = {
       mod = pkgs.applyPatches {
         src = pkgs.fetchzip {
           url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
