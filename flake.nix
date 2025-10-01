@@ -12,6 +12,9 @@
       eachSystem = f: nixpkgs.lib.genAttrs (import systems) (system: f nixpkgs.legacyPackages.${system});
     in
     {
+      packages = eachSystem (pkgs: {
+        default = (import ./mods.nix { inherit pkgs; lib = pkgs.lib; }).motorTownMods;
+      });
       nixosModules.default = import ./motortown-server.nix;
       nixosModules.logger = import ./logger.nix;
 

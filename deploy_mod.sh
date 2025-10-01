@@ -5,8 +5,8 @@
 DEFAULT_SSH_PORT="222"
 DEFAULT_SSH_USER="steam"
 DEFAULT_HOST="asean-mt-server"
-DEFAULT_SOURCE_DIR="./Scripts"
-DEFAULT_DEST_DIR="/var/lib/motortown-server/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods/"
+DEFAULT_SOURCE_DIR="./MotorTownMods/Scripts"
+DEFAULT_DEST_DIR="/var/lib/motortown-server/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods/Scripts"
 DEFAULT_STOP_PORT="55001"
 DEFAULT_RELOAD_PORT="55000"
 
@@ -75,7 +75,7 @@ echo ""
 
 # 1. Synchronize files to the remote server using rsync
 echo "STEP 1: Syncing files with rsync..."
-rsync -avzP -e "ssh -p ${SSH_PORT}" --perms --chmod=a+rwx,o-w "${SOURCE_DIR}" "${REMOTE_TARGET}"
+scp -P ${SSH_PORT} ${SOURCE_DIR}/*.lua "${REMOTE_TARGET}"
 echo "Rsync complete."
 echo ""
 
@@ -85,6 +85,7 @@ curl -X POST "${STOP_URL}"
 echo ""
 echo "Stop command sent."
 echo ""
+sleep 2
 
 # 3. Reload the mod server via the management server
 echo "STEP 3: Sending 'reload' command to the management server..."

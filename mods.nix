@@ -7,7 +7,8 @@ let
 
   # UE4SS Mod
   ue4ss = if modVersion == "v10" then
-    ./UE4SS_v3 else if modVersion != "v0.8.9-amc" then
+    ./UE4SS_v4
+    else if modVersion != "v0.8.9-amc" then
     pkgs.fetchzip {
       url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
       hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
@@ -176,28 +177,8 @@ let
     };
     "v10" = {
       mod = pkgs.applyPatches {
-        src = pkgs.fetchzip {
-          url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
-          hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
-        };
+        src = ./MotorTownMods_v10;
         patches = [
-          ./patches/event_owner.patch
-          ./patches/sign_contract_webhook.patch
-          ./patches/batch_webhook.patch
-          ./patches/money_transfer.patch
-          ./patches/passenger_arrived_webhook.patch
-          ./patches/contract_arrived_webhook.patch
-          ./patches/cargo_dumped_webhook.patch
-          ./patches/fix_teleport_player.patch
-          ./patches/set_money_webhook.patch
-          ./patches/tow_request_arrived_webhook.patch
-          ./patches/join_leave_event.patch
-          ./patches/player_send_chat.patch
-          ./patches/fix_vehicle_serialization.patch
-          ./patches/pull_webhook.patch
-          ./patches/safe_hooks.patch
-          ./patches/guard_transfer_money.patch
-          ./patches/tp_no_vehicles.patch
         ];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
@@ -206,9 +187,7 @@ let
           find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
         '';
       };
-      shared = pkgs.fetchzip {
-        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
-        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
+      shared = ./shared;
       };
     };
   };
@@ -227,7 +206,7 @@ ${engineIni}'';
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
     set -xeu
     cp --no-preserve=mode,ownership -r ${ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    cp --no-preserve=mode,ownership -r ${ue4ss}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
