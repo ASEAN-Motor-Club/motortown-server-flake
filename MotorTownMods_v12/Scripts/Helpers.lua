@@ -126,7 +126,7 @@ end)
 ---Convert FVector to JSON serializable table
 ---@param vector FVector
 function VectorToTable(vector)
-  if not vector:IsValid() then
+  if vector ~= nil and type(vector.IsValid) == "function" and not vector:IsValid() then
     return nil
   end
   return {
@@ -173,9 +173,13 @@ end
 ---Convert FGuid to string
 ---@param guid FGuid
 function GuidToString(guid)
+  if guid == nil then
+    return "0000"
+  end
+
   if type(guid) == "table" then return "0000" end
 
-  if not guid:IsValid() then
+  if type(guid.IsValid) == "function" and not guid:IsValid() then
     return "0000"
   end
   local rawGuid = { guid.A, guid.B, guid.C, guid.D }
