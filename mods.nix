@@ -6,7 +6,7 @@ let
   ue4ssAddons = ./ue4ss;
 
   # UE4SS Mod
-  ue4ss = if modVersion == "v10" || modVersion == "v11" then
+  ue4ss = if modVersion == "v10" || modVersion == "v11"  || modVersion == "v12" then
     ./UE4SS_v4
     else if modVersion != "v0.8.9-amc" then
     pkgs.fetchzip {
@@ -203,6 +203,20 @@ let
       };
       shared = ./shared;
     };
+    "v12" = {
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v12;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
@@ -213,6 +227,13 @@ let
     enableExternalMods;
 
   engineIniFile = pkgs.writeText "engine.ini" ''
+[/script/onlinesubsystemutils.ipnetdriver]
+ConnectionTimeout=6000.0
+InitialConnectTimeout=6000.0
+
+[SystemSettings]
+t.MaxFPS=120
+
 [ConsoleVariables]
 ${engineIni}'';
 

@@ -484,7 +484,7 @@ webhook.RegisterEventHook(
 webhook.RegisterEventHook(
   "ServerCargoArrived",
   function (PC, cargos)
-    local playerId = GetPlayerUniqueId(PC)
+    local characterGuid = GetPlayerGuid(PC)
     local data = {}
     cargos:ForEach(function(key, value)
       local cargo = value:get()
@@ -494,7 +494,7 @@ webhook.RegisterEventHook(
     end)
 
     return {
-      PlayerId = playerId,
+      CharacterGuid = characterGuid,
       Cargos = data
     }
   end
@@ -544,7 +544,7 @@ webhook.RegisterEventHook(
 webhook.RegisterEventHook(
   "ServerContractCargoDelivered",
   function (PC, contractGuid)
-    local playerId = GetPlayerUniqueId(PC)
+    local characterGuid = GetPlayerGuid(PC)
     local contract = nil
     local finishedAmount = 0
     PC.Companies:ForEach(function(key, value)
@@ -564,7 +564,7 @@ webhook.RegisterEventHook(
     end
 
     return {
-      PlayerId = playerId,
+      CharacterGuid = characterGuid,
       ContractGuid = GuidToString(contractGuid),
       Contract = contract,
       FinishedAmount = finishedAmount,
@@ -575,10 +575,10 @@ webhook.RegisterEventHook(
 webhook.RegisterEventHook(
   "ServerPassengerArrived",
   function (PC, passenger)
-    local playerId = GetPlayerUniqueId(PC)
+    local characterGuid = GetPlayerGuid(PC)
     local data = PassengerToTable(passenger)
     return {
-      PlayerId = playerId,
+      CharacterGuid = characterGuid,
       Passenger = data
     }
   end
@@ -587,10 +587,10 @@ webhook.RegisterEventHook(
 webhook.RegisterEventHook(
   "ServerTowRequestArrived",
   function (PC, towRequest)
-    local playerId = GetPlayerUniqueId(PC)
+    local characterGuid = GetPlayerGuid(PC)
     local data = TowRequestToTable(towRequest)
     return {
-      PlayerId = playerId,
+      CharacterGuid = characterGuid,
       TowRequest = data
     }
   end
