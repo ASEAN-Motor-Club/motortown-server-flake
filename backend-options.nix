@@ -145,12 +145,12 @@ let
     };
     restartSchedule = mkOption {
       type = types.str;
-      default = "Mon *-*-* 01:30:00";
+      default = "Mon *-*-* 08:30:00";
       description = "The scheduled restart time(s), in systemd OnCalendar format: https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS";
     };
     restartAnnouncementSchedule = mkOption {
       type = types.str;
-      default = "Mon *-*-* 01:15,25,29";
+      default = "Mon *-*-* 08:15,25,29";
       description = "The scheduled restart announcement time(s), in systemd OnCalendar format: https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS";
     };
     restartMessage = mkOption {

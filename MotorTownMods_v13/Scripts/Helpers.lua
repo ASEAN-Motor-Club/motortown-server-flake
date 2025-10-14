@@ -550,12 +550,14 @@ LoopAsync(100, function()
     return false
   end
 
-  isFinished = false
-  attempts = 0
   local fn = table.remove(syncFns, 1)
 
-  ExecuteInGameThread(function()
-    fn()
-    isFinished = true
-  end)
+  if fn then
+    isFinished = false
+    attempts = 0
+    ExecuteInGameThread(function()
+      fn()
+      isFinished = true
+    end)
+  end
 end)
