@@ -7,11 +7,14 @@ local timer = require("Debugging/Timer")
 local vehicleDealerSoftPath = "/Script/MotorTown.MTDealerVehicleSpawnPoint"
 
 local function GetPlayerVehicle(PC)
+  if PC.LastVehicle ~= nil and PC.LastVehicle:IsValid() then
+    return PC.LastVehicle
+  end
   local pawn = PC:K2_GetPawn()
   if pawn:IsValid() then
     local vehicleClass = StaticFindObject("/Script/MotorTown.MTVehicle")
 
-    if pawn:IsA(vehicleClass) then
+    if pawn:IsA(vehicleClass) and pawn:IsValid() then
       return pawn
     end
   end
@@ -1857,13 +1860,22 @@ local function HandleDespawnPlayerVehicle(session)
     end
     if vehicle:IsValid() then
       local curr = vehicle
-      while curr ~= nil do
+      ExecuteInGameThread(function()
+        PC:ServerExitVehicle()
+      end)
+
+      while curr ~= nil and curr:IsValid() and curr.Net_Hooks:IsValid() do
         local v = curr
-        curr.Net_Hooks:ForEach(function(i, val)
+        curr = nil
+        v.Net_Hooks:ForEach(function(i, val)
           local hook = val:get()
-          curr = hook.Trailer
+          if hook:IsValid() and hook.Trailer.Net_VehicleId ~= v.Net_VehicleId then
+            curr = hook.Trailer
+          end
         end)
-        PC:ServerDespawnVehicle(v, 0)
+        ExecuteInGameThread(function()
+          PC:ServerDespawnVehicle(v, 0)
+        end)
       end
       return json.stringify { Status = "ok" }, nil, 200
     end
@@ -1917,6 +1929,12 @@ local function HandleSetPlayerVehicleDecal(session)
       vehicle:ServerSetDecal({ DecalLayers = vehicle.Net_Decal.DecalLayers })
       PC:ServerSetVehicleCustomization(vehicle, TableToVehicleCustomization(content.customization, vehicle.Customization))
 
+      if content.save then
+        ExecuteInGameThreadSync(function()
+          PC:ClientSaveVehicles()
+        end)
+      end
+
       return json.stringify { Status = "ok" }, nil, 200
     end
     return json.stringify { error = "Invalid vehicle" }, nil, 400
@@ -1938,9 +1956,25 @@ local function HandleGetPlayerVehicles(session)
   end
 
   local lastPlayerVehicleId = nil
+  local activeVehicles = {}
   if PC.LastVehicle ~= nil and PC.LastVehicle:IsValid() then
     lastPlayerVehicleId = PC.LastVehicle.Net_VehicleId
+
+    local curr = PC.LastVehicle
+
+    while curr ~= nil and curr:IsValid() and curr.Net_Hooks:IsValid() do
+      local v = curr
+      activeVehicles[curr.Net_VehicleId] = true
+      curr = nil
+      v.Net_Hooks:ForEach(function(i, val)
+        local hook = val:get()
+        if hook:IsValid() and hook.Trailer.Net_VehicleId ~= v.Net_VehicleId then
+          curr = hook.Trailer
+        end
+      end)
+    end
   end
+
 
   local vehicles = {}
   PC.Net_SpawnedVehicles:ForEach(function(index, element)
@@ -1954,13 +1988,86 @@ local function HandleGetPlayerVehicles(session)
         table.insert(vehicleTags, tag)
       end)
       vehicleInfo["tags"] = vehicleTags
-      vehicleInfo["isLastVehicle"] = vehicle.Net_VehicleId == lastPlayerVehicleId
+      vehicleInfo["isLastVehicle"] = activeVehicles[vehicle.Net_VehicleId] ~= nil
       vehicleInfo["position"] = VectorToTable(vehicle:K2_GetActorLocation())
       table.insert(vehicles, vehicleInfo)
     end
   end)
   return json.stringify { vehicles = vehicles }, nil, 200
 end
+
+
+local rpPlayers = {}
+
+local function HandlePlayerExitVehicle(session)
+  local characterGuid = session.pathComponents[2]
+  local PC = GetPlayerControllerFromGuid(characterGuid)
+  if not PC:IsValid() then
+    return json.stringify { error = "Invalid player controller" }, nil, 400
+  end
+  PC:ServerExitVehicle()
+  return nil, nil, 200
+end
+
+local function HandleGetRPMode(session)
+  local characterGuid = StringToGuid(session.pathComponents[2])
+  return json.stringify { isRpMode = rpPlayers[characterGuid] ~= nil }, nil, 200
+end
+
+local function HandleSetRPMode(session)
+  local characterGuid = session.pathComponents[2]
+  local PC = GetPlayerControllerFromGuid(characterGuid)
+  if not PC:IsValid() then
+    return json.stringify { error = "Invalid player controller" }, nil, 400
+  end
+
+  if not PC.Net_SpawnedVehicles:IsValid() then
+    return json.stringify { error = "Invalid player vehicles" }, nil, 400
+  end
+
+
+  if rpPlayers[characterGuid] == nil then
+      ExecuteInGameThreadSync(function()
+          PC:ClientShowPopupMessage(FText("RP mode is enabled"))
+      end)
+      PC.Net_SpawnedVehicles:ForEach(function(index, element)
+        local vehicle = element:get()
+        if vehicle:IsValid() then
+            ExecuteInGameThread(function()
+                PC:ServerDespawnVehicle(vehicle, 0)
+            end)
+        end
+      end)
+      rpPlayers[characterGuid] = true
+      return json.stringify { isRpMode = true }, nil, 200
+  else
+      ExecuteInGameThreadSync(function()
+          PC:ClientShowPopupMessage(FText("RP mode is disabled"))
+      end)
+      rpPlayers[characterGuid] = nil
+      return json.stringify { isRpMode = false }, nil, 200
+  end
+
+  return nil, nil, 200
+end
+
+
+--RegisterHook('/Script/MotorTown.MotorTownPlayerController:ServerResetVehicleAtResponse', function(context, vehicleParam)
+--    LogOutput('INFO', 'ServerResetVehicleAtResponse')
+--    local PC = context:get()
+--    local vehicle = vehicleParam:get()
+--    if PC:IsValid() and vehicle:IsValid() then
+--        local characterGuid = GetPlayerGuid(PC)
+--        if rpPlayers[characterGuid] then
+--            ExecuteInGameThread(function()
+--                PC:ServerDespawnVehicle(vehicle, 0)
+--            end)
+--            ExecuteInGameThreadSync(function()
+--                PC:ClientShowPopupMessage(FText("Your vehicle has been despawned for using roadside recovery in RP mode"))
+--            end)
+--        end
+--    end
+--end)
 
 return {
   HandleGetVehicles = HandleGetVehicles,
@@ -1978,4 +2085,7 @@ return {
   VehicleMirrorPositionToTable = VehicleMirrorPositionToTable,
   VehicleSettingToTable = VehicleSettingToTable,
   HandleSetVehicleParameter = HandleSetVehicleParameter,
+  HandleGetRPMode = HandleGetRPMode,
+  HandleSetRPMode = HandleSetRPMode,
+  HandlePlayerExitVehicle = HandlePlayerExitVehicle,
 }
