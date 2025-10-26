@@ -108,6 +108,51 @@ let
       };
       shared = ./shared;
     };
+    "v14" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v14;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
+    "v15" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v15;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
+    "v16" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v16;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
