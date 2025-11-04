@@ -153,6 +153,21 @@ let
       };
       shared = ./shared;
     };
+    "v17" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v17;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
@@ -163,7 +178,7 @@ let
     enableExternalMods;
 
   engineIniFile = pkgs.writeText "engine.ini" ''
-[/script/onlinesubsystemutils.ipnetdriver]
+[/Script/OnlineSubsystemUtils.IpNetDriver]
 ConnectionTimeout=6000.0
 InitialConnectTimeout=6000.0
 
