@@ -168,6 +168,21 @@ let
       };
       shared = ./shared;
     };
+    "v18" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v18;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
