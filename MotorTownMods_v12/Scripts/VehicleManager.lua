@@ -1,4 +1,5 @@
 local webhook = require("Webclient")
+local UEHelpers = require("UEHelpers")
 local json = require("JsonParser")
 local cargo = require("CargoManager")
 local assetManager = require("AssetManager")
@@ -1527,6 +1528,31 @@ local function GetVehicles(id, fields, limit, isControlled)
   return arr
 end
 
+local function GetVehiclesByTag(tags)
+  local arr = {}
+
+  for tagIndex, tag in ipairs(tags) do
+    local actors = {}
+    UEHelpers.GetGameplayStatics():GetAllActorsWithTag(
+      UEHelpers.GetWorld(),
+      FName(tag),
+      actors
+    )
+    for i, actorContainer in ipairs(actors) do
+      local vehicle = actorContainer:get()
+      table.insert(arr, {
+        FullName = vehicle:GetFullName(),
+        ClassFullName = vehicle:GetClass():GetFullName(),
+        Location = vehicle:K2_GetActorLocation(),
+        Rotation = vehicle:K2_GetActorRotation(),
+        decal = VehicleDecalToTable(vehicle.Net_Decal),
+        customization = VehicleCustomizationToTable(vehicle.Customization),
+      })
+    end
+  end
+  return arr
+end
+
 ---Despawn selected vehicle
 ---@param id number Vehicle ID
 ---@param uniqueId string? Player unique net ID
@@ -1723,6 +1749,12 @@ local function HandleGetVehicles(session)
 
   local stringifyTime, res = timer.benchmark(json.stringify, { data = data })
   LogOutput("DEBUG", "GetVehicles stringify time: %fs", stringifyTime)
+  return res, nil, 200
+end
+
+local function HandleGetVehiclesByTag(session)
+  local tags = SplitString(session.queryComponents.tags, ",")
+  local res = json.stringify({ data = GetVehiclesByTag(tags) })
   return res, nil, 200
 end
 
@@ -1972,8 +2004,48 @@ local function HandleGetPlayerVehicles(session)
   return json.stringify { vehicles = vehicles }, nil, 200
 end
 
+
+local function HandleSpawnVehicle(session)
+  local content = json.parse(session.content)
+
+  if content ~= nil and type(content) == "table" and content.AssetPath and content.Location then
+    local spawned, tag, vehicle = assetManager.SpawnActor(content.AssetPath, content.Location, content.Rotation, content.tag)
+
+    if spawned then
+      if content.customization then
+        vehicle.Customization.BodyMaterialIndex = content.customization.BodyMaterialIndex
+        vehicle.Customization.BodyColors:Empty()
+        for i, bc in ipairs(content.customization.BodyColors) do
+          vehicle.Customization.BodyColors[i].MaterialSlotName = FName(bc.MaterialSlotName)
+          vehicle.Customization.BodyColors[i].Color = bc.Color
+        end
+      end
+
+      if content.decal then
+        ExecuteInGameThread(function()
+          if not vehicle:IsValid() then
+            return
+          end
+          local decal = TableToVehicleDecal(content.decal)
+          vehicle.Net_Decal.DecalLayers:Empty()
+          for index, value in ipairs(decal.DecalLayers) do
+            vehicle.Net_Decal.DecalLayers[index] = value
+          end
+          vehicle:ServerSetDecal({ DecalLayers = vehicle.Net_Decal.DecalLayers })
+        end)
+      end
+
+      return json.stringify { data = { tag }, actor = vehicle:GetFullName() }
+    else
+      error("Failed to spawn asset " .. content.AssetPath)
+    end
+  end
+  return nil, nil, 400
+end
+
 return {
   HandleGetVehicles = HandleGetVehicles,
+  HandleGetVehiclesByTag = HandleGetVehiclesByTag,
   HandleGetPlayerVehicles = HandleGetPlayerVehicles,
   HandleGetPlayerVehicleDecal = HandleGetPlayerVehicleDecal,
   HandleSetPlayerVehicleDecal = HandleSetPlayerVehicleDecal,
@@ -1982,6 +2054,7 @@ return {
   HandleCreateVehicleDealerSpawnPoint = HandleCreateVehicleDealerSpawnPoint,
   HandleGetGarages = HandleGetGarages,
   HandleSpawnGarage = HandleSpawnGarage,
+  HandleSpawnVehicle = HandleSpawnVehicle,
   VehicleToTable = VehicleToTable,
   VehicleCustomizationToTable = VehicleCustomizationToTable,
   VehicleDecalToTable = VehicleDecalToTable,

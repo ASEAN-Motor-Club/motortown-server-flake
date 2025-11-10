@@ -281,6 +281,11 @@ local function HandleSetServerConfig(session)
   return nil, nil, 200
 end
 
+--NotifyOnNewObject("/Script/MotorTown.MTTimeOfDayConfig", function(obj)
+--  obj.TimeOfDayConfig.Speed = 0
+--  obj.TimeOfDayConfig.Start = 0
+--end)
+
 return {
     HandleGetServerState = HandleGetServerState,
     HandleGetZoneState = HandleGetZoneState,

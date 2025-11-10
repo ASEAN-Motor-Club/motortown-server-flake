@@ -72,6 +72,7 @@ local function LoadWebserver()
 
     -- Vehicle management
     server.registerHandler("/vehicles", "GET", vehicleManager.HandleGetVehicles)
+    server.registerHandler("/tagged_vehicles", "GET", vehicleManager.HandleGetVehiclesByTag)
     server.registerHandler("/vehicles", "PATCH", vehicleManager.HandleSetVehicleParameter)
     server.registerHandler("/vehicles/*/despawn", "POST", vehicleManager.HandleDespawnVehicle)
     server.registerHandler("/player_vehicles/*/despawn", "POST", vehicleManager.HandleDespawnPlayerVehicle)
@@ -83,6 +84,7 @@ local function LoadWebserver()
     server.registerHandler("/dealers/spawn", "POST", vehicleManager.HandleCreateVehicleDealerSpawnPoint)
     server.registerHandler("/garages", "GET", vehicleManager.HandleGetGarages)
     server.registerHandler("/garages/spawn", "POST", vehicleManager.HandleSpawnGarage)
+    server.registerHandler("/vehicles/spawn", "POST", vehicleManager.HandleSpawnVehicle)
 
     -- Asset management
     server.registerHandler("/assets/spawn", "POST", assetManager.HandleSpawnActor)
