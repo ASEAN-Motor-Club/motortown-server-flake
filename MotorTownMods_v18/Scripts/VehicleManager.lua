@@ -2207,7 +2207,6 @@ local function HandleSpawnVehicle(session)
           vehicle:ServerSetDecal({ DecalLayers = vehicle.Net_Decal.DecalLayers })
           if content.parts ~= nil then
             vehicle.Net_Parts:Empty()
-            local parts = {}
             for i, part in ipairs(content.parts) do
               vehicle.Net_Parts[i] = TableToVehiclePart(part)
               vehicle.Net_Parts[i].StringValues = part.StringValues
