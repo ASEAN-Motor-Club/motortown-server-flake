@@ -27,6 +27,10 @@ let
       type = types.bool;
       default = true;
     };
+    bAllowAdminToRemoveAdmin = mkOption {
+      type = types.bool;
+      default = true;
+    };
     bAllowCorporation = mkOption {
       type = types.bool;
       default = true;
