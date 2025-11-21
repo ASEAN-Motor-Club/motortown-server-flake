@@ -94,7 +94,6 @@ in
         Group = "modders";
         Restart = "always";
         EnvironmentFile = cfg.credentialsFile;
-        KillSignal = "SIGKILL";
         StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
       };
@@ -109,9 +108,9 @@ in
         mkdir -p "$STATE_DIRECTORY/run"
       '';
       script = ''
-        XDG_RUNTIME_DIR="$STATE_DIRECTORY/run" \
-        STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata" \
-          ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
+        export XDG_RUNTIME_DIR="$STATE_DIRECTORY/run"
+        export STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata"
+        exec ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';
     };
 
