@@ -18,14 +18,14 @@ usage() {
     echo "requests to restart and reload a service on that server."
     echo ""
     echo "Options:"
-    echo "  -p, --ssh-port PORT        Specify the SSH port for rsync. (Default: $DEFAULT_SSH_PORT)"
-    echo "  -u, --user USER            Specify the SSH username. (Default: $DEFAULT_SSH_USER)"
-    echo "  -h, --host HOST            Specify the remote host for both rsync and curl. (Default: $DEFAULT_HOST)"
-    echo "  -s, --source DIR           Specify the local source directory to sync. (Default: $DEFAULT_SOURCE_DIR)"
-    echo "  -d, --dest DIR             Specify the remote destination directory. (Default: $DEFAULT_DEST_DIR)"
-    echo "      --stop-port PORT       Specify the port for the 'stop' API endpoint. (Default: $DEFAULT_STOP_PORT)"
-    echo "      --reload-port PORT     Specify the port for the 'reload' API endpoint. (Default: $DEFAULT_RELOAD_PORT)"
-    echo "      --help                 Display this help message and exit."
+    echo "  -p, --ssh-port PORT       Specify the SSH port for rsync. (Default: $DEFAULT_SSH_PORT)"
+    echo "  -u, --user USER           Specify the SSH username. (Default: $DEFAULT_SSH_USER)"
+    echo "  -h, --host HOST           Specify the remote host for both rsync and curl. (Default: $DEFAULT_HOST)"
+    echo "  -s, --source DIR          Specify the local source directory to sync. (Default: $DEFAULT_SOURCE_DIR)"
+    echo "  -d, --dest DIR            Specify the remote destination directory. (Default: $DEFAULT_DEST_DIR)"
+    echo "      --stop-port PORT      Specify the port for the 'stop' API endpoint. (Default: $DEFAULT_STOP_PORT)"
+    echo "      --reload-port PORT    Specify the port for the 'reload' API endpoint. (Default: $DEFAULT_RELOAD_PORT)"
+    echo "      --help                Display this help message and exit."
     exit 1
 }
 
@@ -57,12 +57,30 @@ done
 
 # --- Main Execution ---
 
+# Create a secure temporary directory for file processing
+# Using mktemp is safer than creating a fixed-name directory
+TEMP_DIR=$(mktemp -d)
+
+# Set up a trap to ensure the temporary directory is cleaned up when the script exits,
+# even if it fails or is interrupted (e.g., with Ctrl+C).
+trap 'echo ""; echo "--- Cleaning up temporary files ---"; rm -rf "$TEMP_DIR"' EXIT
+
+echo "Copying source files to a temporary location for processing..."
+cp ${SOURCE_DIR}/*.lua "${TEMP_DIR}/"
+
+echo "Converting line endings to Windows format (CRLF)..."
+find "$TEMP_DIR" -type f -name "*.lua" -exec sed -i 's/$/\r/' {} +
+#find "$TEMP_DIR" -type f -name "*.lua" -exec sed -i 's/\r$//' {} +;
+echo "Conversion complete."
+echo ""
+
+
 # Construct the remote target for rsync
 REMOTE_TARGET="${SSH_USER}@${HOST}:${DEST_DIR}"
 
 # Construct the curl URLs
-STOP_URL="${HOST}:${STOP_PORT}/stop"
-RELOAD_URL="${HOST}:${RELOAD_PORT}/mods/reload"
+STOP_URL="http://${HOST}:${STOP_PORT}/stop"
+RELOAD_URL="http://${HOST}:${RELOAD_PORT}/mods/reload"
 
 echo "--- Configuration ---"
 echo "Source:         $SOURCE_DIR"
@@ -73,10 +91,11 @@ echo "Reload URL:     $RELOAD_URL"
 echo "---------------------"
 echo ""
 
-# 1. Synchronize files to the remote server using rsync
-echo "STEP 1: Syncing files with rsync..."
-scp -P ${SSH_PORT} ${SOURCE_DIR}/*.lua "${REMOTE_TARGET}"
-echo "Rsync complete."
+# 1. Synchronize files to the remote server using scp
+echo "STEP 1: Syncing files with scp..."
+# We now upload the converted files from our temporary directory
+scp -P ${SSH_PORT} ${TEMP_DIR}/VehicleManager.lua "${REMOTE_TARGET}"
+echo "Sync complete."
 echo ""
 
 # 2. Stop the mod server
@@ -85,7 +104,7 @@ curl -X POST "${STOP_URL}"
 echo ""
 echo "Stop command sent."
 echo ""
-sleep 2
+sleep 5
 
 # 3. Reload the mod server via the management server
 echo "STEP 3: Sending 'reload' command to the management server..."
@@ -94,4 +113,3 @@ echo ""
 echo "Reload command sent."
 echo ""
 echo "--- Script Finished ---"
-
