@@ -36,6 +36,9 @@ local function PlayerStateToTable(playerState)
     end)
 
     data.Location = VectorToTable(playerState.Location)
+    if pawn:IsValid() then
+      data.Rotation = RotatorToTable(pawn:K2_GetActorRotation())
+    end
     data.VehicleKey = playerState.VehicleKey:ToString()
   end
 
