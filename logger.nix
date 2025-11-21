@@ -32,48 +32,13 @@ in
   };
 
   config = mkIf cfg.enable {
-    services.rsyslogd = {
-      enable = true;
-      extraConfig = ''
-        module(load="imfile")
-        module(load="omrelp")
-
-        input(type="imfile"
-          File="${cfg.serverLogsPath + "/*.log"}"
-          Tag="${cfg.tag}"
-          ruleset="mt-out"
-          addMetadata="on"
-        )
-        input(type="imfile"
-          File="${cfg.modLogsPath}"
-          Tag="${cfg.tag}"
-          ruleset="mod-out"
-        )
-        template(name="with_filename" type="list") {
-          property(name="timestamp" dateFormat="rfc3339")
-          constant(value=" ")
-          property(name="hostname")
-          constant(value=" ")
-          property(name="syslogtag")
-          constant(value=" ")
-          property(name="$!metadata!filename")
-          property(name="msg" spifno1stsp="on" )
-          property(name="msg" droplastlf="on" )
-          constant(value="\n")
-        }
-        Ruleset(name="mt-out") {
-          action(type="omrelp"
-            target="${cfg.relpServerHost}"
-            port="${toString cfg.relpServerPort}"
-            template="with_filename"
-          )
-        }
-        Ruleset(name="mod-out") {
-          action(type="omfile"
-            File="/var/log/UE4SS.log"
-          )
-        }
-      '';
-    };
+    services.rsyslogd.extraConfig = ''
+      input(type="imfile"
+        File="${cfg.serverLogsPath + "/*.log"}"
+        Tag="${cfg.tag}"
+        ruleset="mt-out"
+        addMetadata="on"
+      )
+    '';
   };
 }
