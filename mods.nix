@@ -183,6 +183,21 @@ let
       };
       shared = ./shared;
     };
+    "v19" = {
+      ue4ss = ./UE4SS_v4;
+      mod = pkgs.applyPatches {
+        src = ./MotorTownMods_v19;
+        patches = [
+        ];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
   };
   motorTownMods = motorTownModsVersions.${modVersion};
 
