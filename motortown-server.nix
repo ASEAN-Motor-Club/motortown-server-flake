@@ -161,7 +161,7 @@ in
             
             echo "$minutes_left"
         }
-        minutes=$(minutes_to_time "01:30")
+        minutes=$(minutes_to_time "08:30")
         curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
       '';
     };
