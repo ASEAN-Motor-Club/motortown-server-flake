@@ -43,7 +43,7 @@
                 self.nixosModules.default
                 hostConfig.services.motortown-server-containers-env
                 backendOptions.config
-              ];
+              ] ++ backendOptions.imports;
               services.motortown-server = { logsTag = name; } // backendOptions.motortown-server;
             });
           };
@@ -52,6 +52,10 @@
         options = {
           services.motortown-server-containers = lib.mkOption {
             type = lib.types.attrsOf (lib.types.submodule {
+              options.imports = lib.mkOption {
+                type = lib.types.listOf lib.types.deferredModule;
+                default = [];
+              };
               options.config = lib.mkOption {
                 type = lib.types.attrs;
                 default = {};
