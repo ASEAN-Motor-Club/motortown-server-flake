@@ -2009,8 +2009,8 @@ local function HandleDespawnPlayerVehicle(session)
     ExecuteInGameThreadSync(function()
       for vehicleId, vehicle in pairs(vehiclesToDespawn) do
         LogOutput('INFO', 'Despawning vehicle %s', vehicleId)
-        if vehicle:IsValid() and PC:IsValid() and not vehicle:IsActorBeingDestroyed() then
-          PC:ServerDespawnVehicle(vehicle, 0)
+        if vehicle:IsValid() and not vehicle:IsActorBeingDestroyed() then
+          vehicle:K2_DestroyActor()
         end
       end
     end)
@@ -2301,15 +2301,16 @@ local function HandleSetRPMode(session)
       ExecuteInGameThreadSync(function()
         if PC:IsValid() and PC.Net_SpawnedVehicles:IsValid() then
           local lastVehicleId = nil
-          --if PC.LastVehicle:IsValid() and not PC.LastVehicle:IsActorBeingDestroyed() then
-          --  lastVehicleId = PC.LastVehicle.Net_VehicleId
-          --  PC:ServerDespawnVehicle(PC.LastVehicle, 0)
-          --end
+          if PC.LastVehicle:IsValid() and not PC.LastVehicle:IsActorBeingDestroyed() then
+            LogOutput("INFO", "Despawning last vehicle for RP mode")
+            lastVehicleId = PC.LastVehicle.Net_VehicleId
+            vehicle:K2_DestroyActor()
+          end
           PC.Net_SpawnedVehicles:ForEach(function(index, element)
             local vehicle = element:get()
             LogOutput("INFO", "Despawning vehicle for RP mode")
             if vehicle:IsValid() and not vehicle:IsActorBeingDestroyed() and vehicle.Net_VehicleId ~= lastVehicleId then
-              PC:ServerDespawnVehicle(vehicle, 0)
+              vehicle:K2_DestroyActor()
             end
           end)
         end
