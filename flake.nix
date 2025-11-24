@@ -44,6 +44,7 @@
                 hostConfig.services.motortown-server-containers-env
                 backendOptions.config
               ] ++ backendOptions.imports;
+              system.stateVersion = "25.05";
               services.motortown-server = { logsTag = name; } // backendOptions.motortown-server;
             });
           };
