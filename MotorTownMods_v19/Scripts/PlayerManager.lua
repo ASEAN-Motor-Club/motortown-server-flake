@@ -197,7 +197,7 @@ local function HandleSetPlayerName(session)
       return json.stringify { error = string.format("Invalid player controller %s", characterGuid) }, nil, 400
     end
     ExecuteInGameThreadSync(function()
-      if not PC:IsValid() or not PC.PlayerState:IsValid() then
+      if PC:IsValid() and PC.PlayerState:IsValid() then
         PC.PlayerState.PlayerNamePrivate = data.name
         PC:SetName(data.name)
       end
