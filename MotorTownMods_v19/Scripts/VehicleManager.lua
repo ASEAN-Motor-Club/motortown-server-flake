@@ -2304,7 +2304,7 @@ local function HandleSetRPMode(session)
           if PC.LastVehicle:IsValid() and not PC.LastVehicle:IsActorBeingDestroyed() then
             LogOutput("INFO", "Despawning last vehicle for RP mode")
             lastVehicleId = PC.LastVehicle.Net_VehicleId
-            vehicle:K2_DestroyActor()
+            PC.LastVehicle:K2_DestroyActor()
           end
           PC.Net_SpawnedVehicles:ForEach(function(index, element)
             local vehicle = element:get()
