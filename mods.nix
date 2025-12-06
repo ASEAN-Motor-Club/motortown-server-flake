@@ -184,7 +184,7 @@ let
       shared = ./shared;
     };
     "v19" = {
-      ue4ss = ./UE4SS_v4;
+      ue4ss = ./UE4SS_v5;
       mod = pkgs.applyPatches {
         src = ./MotorTownMods_v19;
         patches = [
