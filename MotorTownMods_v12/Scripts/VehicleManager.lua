@@ -2009,21 +2009,90 @@ local function HandleSpawnVehicle(session)
   local content = json.parse(session.content)
 
   if content ~= nil and type(content) == "table" and content.AssetPath and content.Location then
+    if content.driverGuid ~= nil then
+      local PC = GetPlayerControllerFromGuid(content.driverGuid)
+      if PC:IsValid() then
+        local pawn = PC:K2_GetPawn()
+        if pawn:IsValid() then
+          content.Rotation = RotatorToTable(pawn:K2_GetActorRotation())
+          content.Location = VectorToTable(pawn:K2_GetActorLocation())
+          content.Location.Z = content.Location.Z - 95
+        end
+      end
+    end
     local spawned, tag, vehicle = assetManager.SpawnActor(content.AssetPath, content.Location, content.Rotation, content.tag)
+    LogOutput("INFO", "Spawned vehicle")
 
     if spawned then
-      if content.customization then
-        vehicle.Customization.BodyMaterialIndex = content.customization.BodyMaterialIndex
-        vehicle.Customization.BodyColors:Empty()
-        for i, bc in ipairs(content.customization.BodyColors) do
-          vehicle.Customization.BodyColors[i].MaterialSlotName = FName(bc.MaterialSlotName)
-          vehicle.Customization.BodyColors[i].Color = bc.Color
+      local function setOwnerSetting(PC)
+        LogOutput("INFO", "Setting profit share")
+        if not vehicle:IsValid() then
+          return
+        end
+        if not vehicle.Net_VehicleOwnerSetting:IsValid() then
+          return
+        end
+        local ownerSettings = {
+          bLocked = false,
+          DriveAllowedPlayers = 0,
+          VehicleOwnerProfitShare = content.profitShare or 0.0,
+          LevelRequirementsToDrive = vehicle.Net_VehicleOwnerSetting.LevelRequirementsToDrive,
+        }
+        vehicle.Net_VehicleOwnerSetting = ownerSettings
+        -- Temporarily set the driver as the owner to set the owner setting
+        -- There's a problem with setting profitShare with other methods
+        vehicle.Net_OwnerPlayerState = PC.PlayerState
+        PC:ServerSetOwnerVehicleSetting(vehicle, ownerSettings)
+        vehicle.Net_OwnerPlayerState = CreateInvalidObject()
+
+        if vehicle.Net_VehicleOwnerSetting.LevelRequirementsToDrive:IsValid() then
+          vehicle.Net_VehicleOwnerSetting.LevelRequirementsToDrive:ForEach(function(index, el)
+            el:set(1)
+          end)
+        end
+        LogOutput("INFO", "Profit share set 2")
+      end
+
+      if content.tags ~= nil  and vehicle.Tags:IsValid() then
+        LogOutput("INFO", "Setting tags")
+        for i, tag in ipairs(content.tags) do
+          vehicle.Tags[#vehicle.Tags+1] = FName(tag)
         end
       end
 
-      if content.decal then
-        ExecuteInGameThread(function()
-          if not vehicle:IsValid() then
+      if content.drivable ~= nil then
+        vehicle.bDrivable = content.drivable
+      end
+
+      if content.customization then
+        LogOutput("INFO", "Setting customization")
+        vehicle.Customization.BodyMaterialIndex = content.customization.BodyMaterialIndex
+        if vehicle.Customization.BodyColors:IsValid() then
+          vehicle.Customization.BodyColors:Empty()
+          for i, bc in ipairs(content.customization.BodyColors) do
+            vehicle.Customization.BodyColors[i].MaterialSlotName = FName(bc.MaterialSlotName)
+            vehicle.Customization.BodyColors[i].Color = bc.Color
+          end
+        end
+      end
+
+      if content.companyGuid and content.companyName then
+        LogOutput("INFO", "Setting company")
+        vehicle.Net_CompanyGuid = StringToGuid(content.companyGuid)
+        vehicle.Net_OwnerCompanyGuid = StringToGuid(content.companyGuid)
+        vehicle.Net_CompanyName = content.companyName
+      elseif content.accountNickname then
+        vehicle.Net_AccountNickname = content.accountNickname
+      end
+
+      if content.forSale ~= nil then
+        vehicle.bForSale = content.forSale
+      end
+
+      if content.decal ~= nil then
+        ExecuteInGameThreadSync(function()
+          LogOutput("INFO", "Setting decals")
+          if not vehicle:IsValid() or not vehicle.Net_Decal:IsValid() or not vehicle.Net_Decal.DecalLayers:IsValid() then
             return
           end
           local decal = TableToVehicleDecal(content.decal)
@@ -2032,7 +2101,41 @@ local function HandleSpawnVehicle(session)
             vehicle.Net_Decal.DecalLayers[index] = value
           end
           vehicle:ServerSetDecal({ DecalLayers = vehicle.Net_Decal.DecalLayers })
-        end)
+        end, "HandleSpawnVehicle ServerSetDecal")
+      end
+
+      if content.parts ~= nil then
+        ExecuteInGameThreadSync(function()
+          LogOutput("INFO", "Setting parts")
+          if not vehicle:IsValid() or not vehicle.Net_Parts:IsValid() then
+            return
+          end
+          vehicle.Net_Parts:Empty()
+          for i, part in ipairs(content.parts) do
+            vehicle.Net_Parts[i] = TableToVehiclePart(part)
+            vehicle.Net_Parts[i].StringValues = part.StringValues
+            vehicle.Net_Parts[i].FloatValues = part.FloatValues
+            vehicle.Net_Parts[i].Int64Values = part.Int64Values
+            vehicle.Net_Parts[i].VectorValues = part.VectorValues
+          end
+          vehicle:ServerSetParts(vehicle.Net_Parts)
+        end, "HandleSpawnVehicle assign parts")
+      end
+
+      if content.driverGuid ~= nil then
+        ExecuteInGameThreadSync(function()
+          LogOutput("INFO", "Setting driver")
+          if not vehicle:IsValid() then
+            return
+          end
+          local PC = GetPlayerControllerFromGuid(content.driverGuid)
+          if PC:IsValid() then
+            if PC.PlayerState:IsValid() then
+              setOwnerSetting(PC)
+            end
+            PC:ServerEnterVehicle(vehicle, 1, -1, false)
+          end
+        end, "HandleSpawnVehicle ServerEnterVehicle")
       end
 
       return json.stringify { data = { tag }, actor = vehicle:GetFullName() }

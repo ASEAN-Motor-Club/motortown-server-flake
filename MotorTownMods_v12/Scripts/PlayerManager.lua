@@ -36,6 +36,7 @@ local function PlayerStateToTable(playerState)
     end)
 
     data.Location = VectorToTable(playerState.Location)
+    local pawn = playerState:GetPawn()
     if pawn:IsValid() then
       data.Rotation = RotatorToTable(pawn:K2_GetActorRotation())
     end
