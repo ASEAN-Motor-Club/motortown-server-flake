@@ -25,9 +25,9 @@ local function HandleCommand(PC, message)
           table.insert(args, parts[i])
         end
         handler(PC, args)
+        return true
       end
     end
-    return true
   end
   return false
 end
