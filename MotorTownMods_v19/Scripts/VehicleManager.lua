@@ -2237,7 +2237,7 @@ end
 
 local rpPlayers = {}
 
-LoopAsync(2000, function()
+LoopAsync(5000, function()
   for characterGuid, isRpMode in pairs(rpPlayers) do
     if isRpMode then
       local PC = GetPlayerControllerFromGuid(characterGuid)
