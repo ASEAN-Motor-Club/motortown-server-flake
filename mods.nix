@@ -5,6 +5,31 @@ let
 
   ue4ssAddons = ./ue4ss;
 
+  # Map mod versions to their UE4SS version
+  ue4ssVersionMap = {
+    "v10" = "v4"; "v11" = "v4"; "v12" = "v4"; "v13" = "v4";
+    "v14" = "v4"; "v15" = "v4"; "v16" = "v4"; "v17" = "v4"; "v18" = "v4";
+    "v19" = "v5";
+  };
+
+  mkModFromBranch = version: {
+    ue4ss = ./${if ue4ssVersionMap.${version} == "v4" then "UE4SS_v4" else "UE4SS_v5"};
+    mod = pkgs.applyPatches {
+      src = builtins.fetchGit {
+        url = "git+ssh://git@github.com/ASEAN-Motor-Club/MTDediMod.git";
+        ref = "refs/heads/release/${version}";
+      };
+      patches = [];
+      prePatch = ''
+        find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+      '';
+      postPatch = ''
+        find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+      '';
+    };
+    shared = ./shared;
+  };
+
   motorTownModsVersions = {
     "v0.8.9-amc" = {
       ue4ss = pkgs.fetchzip {
@@ -48,157 +73,8 @@ let
         hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
       };
     };
-    "v10" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v10;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v11" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v11;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v12" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v12;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v13" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v13;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v14" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v14;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v15" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v15;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v16" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v16;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v17" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v17;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v18" = {
-      ue4ss = ./UE4SS_v4;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v18;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v19" = {
-      ue4ss = ./UE4SS_v5;
-      mod = pkgs.applyPatches {
-        src = ./MotorTownMods_v19;
-        patches = [
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-  };
+  } // lib.genAttrs (lib.attrNames ue4ssVersionMap) mkModFromBranch;
+
   motorTownMods = motorTownModsVersions.${modVersion};
 
   externalModsScripts = lib.attrsets.mapAttrsToList
