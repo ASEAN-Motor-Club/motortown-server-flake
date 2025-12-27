@@ -1,4 +1,4 @@
-{ pkgs, lib, modVersion ? "v0.8.9-amc", enableExternalMods ? {}, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v19", enableExternalMods ? {}, engineIni ? "" }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
@@ -12,12 +12,28 @@ let
     "v19" = "v5";
   };
 
+  # Map mod versions to their commit hashes
+  # This makes evaluation pure because it's locked to a specific revision
+  revMap = {
+    "v10" = "4e85c705ba42bff8430ad91fc36336ce1951edb9";
+    "v11" = "5e94ecd25c388e9765d3af75d3d05a4ffcb06aac";
+    "v12" = "b960f85f936684a78397a36622186fb25b35ab2f";
+    "v13" = "bf7850a2c5d86462ab59727d9a9fd92087595d0e";
+    "v14" = "b7e07fd38f335b7574f76649d8c71a9c95dc6e26";
+    "v15" = "804025506de229fa79dad00b29b1e039ad73557f";
+    "v16" = "b30018ca1ef44ce00223a089780e449ce5b68543";
+    "v17" = "2aff7228f849cdafc01a6593e66c4ecc9d9144d5";
+    "v18" = "f922af744e1e461c0506492ff48bd9704e9b03c1";
+    "v19" = "962f6dce7a3acb92c927aac12ee0787e20f1ab58";
+  };
+
   mkModFromBranch = version: {
     ue4ss = ./${if ue4ssVersionMap.${version} == "v4" then "UE4SS_v4" else "UE4SS_v5"};
     mod = pkgs.applyPatches {
+      name = "MotorTownMods-${version}";
       src = builtins.fetchGit {
         url = "git+ssh://git@github.com/ASEAN-Motor-Club/MTDediMod.git";
-        ref = "refs/heads/release/${version}";
+        rev = revMap.${version};
       };
       patches = [];
       prePatch = ''
@@ -31,6 +47,21 @@ let
   };
 
   motorTownModsVersions = {
+    "dev" = {
+      ue4ss = ./UE4SS_v5;
+      mod = pkgs.applyPatches {
+        name = "MotorTownMods-dev";
+        src = ./MotorTownMods;
+        patches = [];
+        prePatch = ''
+          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
+        '';
+        postPatch = ''
+          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
+        '';
+      };
+      shared = ./shared;
+    };
     "v0.8.9-amc" = {
       ue4ss = pkgs.fetchzip {
         url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
@@ -38,6 +69,7 @@ let
         stripRoot = false;
       };
       mod = pkgs.applyPatches {
+        name = "MotorTownMods-v0.8.9";
         src = pkgs.fetchzip {
           url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
           hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
