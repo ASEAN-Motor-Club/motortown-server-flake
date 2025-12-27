@@ -24,7 +24,7 @@ let
     "v16" = "b30018ca1ef44ce00223a089780e449ce5b68543";
     "v17" = "2aff7228f849cdafc01a6593e66c4ecc9d9144d5";
     "v18" = "f922af744e1e461c0506492ff48bd9704e9b03c1";
-    "v19" = "962f6dce7a3acb92c927aac12ee0787e20f1ab58";
+    "v19" = "65378249187267c824470fd6886e64b46f6fccd5";
   };
 
   mkModFromBranch = version: {
