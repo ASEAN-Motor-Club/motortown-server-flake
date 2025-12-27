@@ -75,3 +75,43 @@ By default, restarting the service will not update the server.
 To force an update, delete `/var/lib/motortown-server/DedicatedServerConfig.json`, then restart the server.
 The missing file would be detected, which triggers the update.
 
+## Mod Development Workflow
+
+Mods are stored in the `MotorTownMods` submodule. We use a branch-based versioning system where each release has its own branch (e.g., `release/v19`).
+
+### Local Development
+
+1.  Set `services.motortown-server.modVersion = "dev";` in your NixOS configuration.
+2.  Make changes to the Lua scripts in `./MotorTownMods/Scripts`.
+3.  If you have a new compiled DLL, place it in `./MotorTownMods/dlls/main.dll`.
+4.  **Important**: Because this is a Flake, you must stage your changes for Nix to see them:
+    ```bash
+    git add MotorTownMods
+    ```
+5.  Deploy as usual. Nix will bundle your local `./MotorTownMods` folder.
+
+### Creating a New Release
+
+1.  Make sure your changes on the `master` branch in the `MotorTownMods` submodule are ready.
+2.  Create and push a new release branch:
+    ```bash
+    cd MotorTownMods
+    git checkout -b release/v20
+    git push -u origin release/v20
+    ```
+3.  **GitHub Actions** will automatically trigger, compile the project on Windows, and commit the resulting `main.dll` back to the `release/v20` branch.
+4.  Get the commit hash of the new release:
+    ```bash
+    git rev-parse HEAD
+    ```
+5.  Update `mods.nix` in the parent repository:
+    *   Add the version to `ue4ssVersionMap`.
+    *   Add the version and its commit hash to `revMap`.
+
+### Updating an Existing Release
+
+If you need to push a fix to an existing release branch (e.g., `release/v19`):
+1.  Push the changes to the branch in the submodule.
+2.  Wait for the CI to finish and commit the new DLL.
+3.  Update the commit hash in `mods.nix`'s `revMap`. This is required to keep the build "locked" and pure-compatible.
+
