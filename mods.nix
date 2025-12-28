@@ -7,34 +7,15 @@ let
 
   # Map mod versions to their UE4SS version
   ue4ssVersionMap = {
-    "v10" = "v4"; "v11" = "v4"; "v12" = "v4"; "v13" = "v4";
-    "v14" = "v4"; "v15" = "v4"; "v16" = "v4"; "v17" = "v4"; "v18" = "v4";
+    "v12" = "v4";
     "v19" = "v5";
-  };
-
-  # Map mod versions to their commit hashes
-  # This makes evaluation pure because it's locked to a specific revision
-  revMap = {
-    "v10" = "4e85c705ba42bff8430ad91fc36336ce1951edb9";
-    "v11" = "5e94ecd25c388e9765d3af75d3d05a4ffcb06aac";
-    "v12" = "b960f85f936684a78397a36622186fb25b35ab2f";
-    "v13" = "bf7850a2c5d86462ab59727d9a9fd92087595d0e";
-    "v14" = "b7e07fd38f335b7574f76649d8c71a9c95dc6e26";
-    "v15" = "804025506de229fa79dad00b29b1e039ad73557f";
-    "v16" = "b30018ca1ef44ce00223a089780e449ce5b68543";
-    "v17" = "2aff7228f849cdafc01a6593e66c4ecc9d9144d5";
-    "v18" = "f922af744e1e461c0506492ff48bd9704e9b03c1";
-    "v19" = "2303ff48c8296b744ae5386aa34d263474f274fe";
   };
 
   mkModFromBranch = version: {
     ue4ss = ./${if ue4ssVersionMap.${version} == "v4" then "UE4SS_v4" else "UE4SS_v5"};
     mod = pkgs.applyPatches {
       name = "MotorTownMods-${version}";
-      src = builtins.fetchGit {
-        url = "git+ssh://git@github.com/ASEAN-Motor-Club/MTDediMod.git";
-        rev = revMap.${version};
-      };
+      src = ./MTDediMod-versions/${version};
       patches = [];
       prePatch = ''
         find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
@@ -51,7 +32,7 @@ let
       ue4ss = ./UE4SS_v5;
       mod = pkgs.applyPatches {
         name = "MotorTownMods-dev";
-        src = ./MotorTownMods;
+        src = ./MTDediMod-versions/v19;
         patches = [];
         prePatch = ''
           find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
@@ -135,7 +116,6 @@ ${engineIni}'';
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
     cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    # cp --no-preserve=mode,ownership -r ${./MotorTownMods/Scripts}/*.lua "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods/Scripts"
     cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
 
     # Paks

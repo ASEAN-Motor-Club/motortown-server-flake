@@ -1,4 +1,6 @@
-[submodule "MotorTownMods"]
-	path = MotorTownMods
-	url = git@github.com:ASEAN-Motor-Club/MTDediMod.git
-	branch = master
+[submodule "MTDediMod-versions/v12"]
+	path = MTDediMod-versions/v12
+	url = ../MTDediMod.git
+[submodule "MTDediMod-versions/v19"]
+	path = MTDediMod-versions/v19
+	url = ../MTDediMod.git
