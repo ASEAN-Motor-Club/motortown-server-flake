@@ -42,6 +42,11 @@
               mountPoint = "/var/lib/motortown-server";
               hostPath = hostStateForContainer name;
             };
+            bindMounts."/var/lib/mtdedimod-dev" = lib.mkIf (backendOptions.motortown-server.modVersion == "dev-cpp") {
+              isReadOnly = false;
+              hostPath = "/var/lib/mtdedimod-dev/ue4ss";
+              mountPoint = "/var/lib/motortown-server/MotorTown/Binaries/Win64/ue4ss";
+            };
             config = { config, pkgs, lib, ... }: ({
               imports = [
                 self.nixosModules.default
@@ -87,7 +92,24 @@
                 };
               };
             };
-          }) cfg;
+          }) cfg // {
+            "mtdedimod-dev" = {
+              "/var/lib/mtdedimod-dev" = {
+                d = {
+                  group = "modders";
+                  mode = "0775";
+                  user = "root";
+                };
+              };
+              "/var/lib/mtdedimod-dev/ue4ss" = {
+                d = {
+                  group = "modders";
+                  mode = "0775";
+                  user = "root";
+                };
+              };
+            };
+          };
 
           networking.firewall.allowedTCPPorts = openPorts;
           networking.firewall.allowedUDPPorts = openPorts;

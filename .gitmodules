@@ -4,3 +4,6 @@
 [submodule "MTDediMod-versions/v19"]
 	path = MTDediMod-versions/v19
 	url = ../MTDediMod.git
+[submodule "MTDediMod"]
+	path = MTDediMod
+	url = ../MTDediMod.git

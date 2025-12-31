@@ -86,6 +86,12 @@ let
         hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
       };
     };
+    "dev-cpp" = {
+      ue4ss = ./UE4SS_v5;
+      mod = null;
+      shared = null;
+      useBindMount = true;
+    };
   } // lib.genAttrs (lib.attrNames ue4ssVersionMap) mkModFromBranch;
 
   motorTownMods = motorTownModsVersions.${modVersion};
@@ -109,14 +115,26 @@ ${engineIni}'';
 
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
     set -xeu
-    cp --no-preserve=mode,ownership "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.log" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.backup.log" 2>/dev/null
-    cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    LOG_FILE="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.log"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_LOG="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.$TIMESTAMP.log"
+
+    if [ -f "$LOG_FILE" ]; then
+        cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_FILE"
+    fi
+
+    ${if motorTownMods.useBindMount or false then ''
+      cp --no-preserve=mode,ownership "${motorTownMods.ue4ss}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    '' else ''
+      cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
+      cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+      rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+      cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
+      cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
+    ''}
+
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-    cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
 
     # Paks
     find $STATE_DIRECTORY/MotorTown/Content/Paks/ -maxdepth 1 -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" -delete
