@@ -120,7 +120,7 @@ ${engineIni}'';
     BACKUP_LOG="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.$TIMESTAMP.log"
 
     if [ -f "$LOG_FILE" ]; then
-        cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_FILE"
+        cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
     fi
 
     ${if motorTownMods.useBindMount or false then ''
