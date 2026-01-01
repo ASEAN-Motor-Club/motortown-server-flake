@@ -16,6 +16,7 @@ Options:
   -r, --restart [NAME]  Restart container after deploy (default name: motortown-server-test)
   -l, --reload          Reload mods via API (stops server first)
   -n, --no-build        Skip building, use existing package
+  -g, --generate-types  Deploy TypeGenerator mod, sync types back to MTDediMod/types/game/
   -h, --help            Show this help message
 
 Environment:
@@ -37,6 +38,7 @@ TARGET=""
 NO_BUILD="${NO_BUILD:-false}"
 DO_RESTART=false
 DO_RELOAD=false
+DO_GENERATE_TYPES=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -51,6 +53,7 @@ while [[ $# -gt 0 ]]; do
       shift ;;
     -l|--reload) DO_RELOAD=true; shift ;;
     -n|--no-build) NO_BUILD=true; shift ;;
+    -g|--generate-types) DO_GENERATE_TYPES=true; shift ;;
     -*) echo "Unknown option: $1"; usage 1 ;;
     *) TARGET="$1"; shift ;;
   esac
@@ -77,6 +80,16 @@ echo "==> Rsyncing mod package to $TARGET:/var/lib/mtdedimod-dev/ue4ss/"
 rsync -avz --delete \
   --exclude 'UE4SS.log' --exclude '*.backup.log' \
   "$MTDEDIMOD_PATH/package/ue4ss/" "$TARGET:/var/lib/mtdedimod-dev/ue4ss/"
+
+# Deploy TypeGenerator if requested
+if [[ "$DO_GENERATE_TYPES" == "true" ]]; then
+  echo "==> Deploying TypeGenerator mod..."
+  rsync -avz "$MTDEDIMOD_PATH/TypeGenerator/" "$TARGET:/var/lib/mtdedimod-dev/ue4ss/Mods/TypeGenerator/"
+  
+  # Add TypeGenerator to mods.txt if not already present
+  echo "==> Enabling TypeGenerator in mods.txt..."
+  ssh "$TARGET" "grep -q '^TypeGenerator' /var/lib/mtdedimod-dev/ue4ss/Mods/mods.txt || echo 'TypeGenerator : 1' >> /var/lib/mtdedimod-dev/ue4ss/Mods/mods.txt"
+fi
 
 echo "==> Rsyncing shared DLLs to $TARGET:/var/lib/mtdedimod-dev/ue4ss/Mods/shared/"
 rsync -avz "$SHARED_PATH/" "$TARGET:/var/lib/mtdedimod-dev/ue4ss/Mods/shared/"
@@ -124,5 +137,37 @@ for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
     fi
   fi
 done
+
+# Generate and sync types if requested
+if [[ "$DO_GENERATE_TYPES" == "true" ]]; then
+  echo ""
+  echo "==> Generating Lua types..."
+  echo "Waiting 30 seconds for game state initialization and type generation..."
+  sleep 30
+  
+  # Check if types were generated
+  echo "==> Checking if types were generated on server..."
+  TYPE_COUNT=$(ssh "$TARGET" "find /var/lib/mtdedimod-dev/ue4ss/Mods/shared/types -name '*.lua' 2>/dev/null | wc -l" || echo "0")
+  
+  if [[ "$TYPE_COUNT" -gt 0 ]]; then
+    echo "✓ Found $TYPE_COUNT type files on server"
+    
+    # Sync types to local MTDediMod/types/game/
+    echo "==> Syncing types to $MTDEDIMOD_PATH/types/game/..."
+    mkdir -p "$MTDEDIMOD_PATH/types/game"
+    rsync -avz "$TARGET:/var/lib/mtdedimod-dev/ue4ss/Mods/shared/types/" "$MTDEDIMOD_PATH/types/game/"
+    
+    echo "✓ Types synced successfully"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Review the generated types in types/game/"
+    echo "  2. Commit them: git add types/game/ && git commit -m 'feat: update generated Lua types'"
+    echo "  3. Disable TypeGenerator mod if no longer needed"
+  else
+    echo "⚠ Warning: No type files found on server"
+    echo "Check server logs for TypeGenerator output:"
+    echo "  ssh $TARGET 'tail -100 /var/lib/mtdedimod-dev/ue4ss/UE4SS.log | grep TypeGenerator'"
+  fi
+fi
 
 echo "==> Done!"
