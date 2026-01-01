@@ -100,4 +100,29 @@ if [[ "$DO_RELOAD" == "true" ]]; then
   curl -X POST "http://$HOST:55000/mods/reload" -d ""
 fi
 
+# Health check
+HOST="${TARGET#*@}"
+echo "==> Running health check on $HOST:55001/status..."
+HEALTH_CHECK_RETRIES=5
+HEALTH_CHECK_DELAY=2
+
+for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
+  RESPONSE=$(curl -s "$HOST:55001/status" 2>/dev/null || echo "")
+  if [[ "$RESPONSE" == '{"status":"ok"}' ]]; then
+    echo "✓ Health check passed: Server is responding correctly"
+    break
+  else
+    if [[ $i -lt $HEALTH_CHECK_RETRIES ]]; then
+      echo "  Health check attempt $i/$HEALTH_CHECK_RETRIES failed (got: '$RESPONSE'), retrying in ${HEALTH_CHECK_DELAY}s..."
+      sleep $HEALTH_CHECK_DELAY
+    else
+      echo "✗ Health check failed after $HEALTH_CHECK_RETRIES attempts"
+      echo "  Expected: '{\"status\":\"ok\"}'"
+      echo "  Got: '$RESPONSE'"
+      echo "⚠ Deployment completed but server may not be healthy"
+      exit 1
+    fi
+  fi
+done
+
 echo "==> Done!"
