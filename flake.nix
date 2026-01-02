@@ -2,6 +2,7 @@
 {
   inputs = {
     self.submodules = true;
+    self.lfs = true;  # Automatically fetch Git LFS files (.pak mods)
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
   };
