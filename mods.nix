@@ -92,6 +92,17 @@ let
       shared = null;
       useBindMount = true;
     };
+    "v0.20.1" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.1/MotorTownMods_v0.20.1.zip";
+        hash = "sha256-7qaD7Xkc2qN+IkIrHLTl3VdieaI6uApi6grcs/rGxEI=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
   } // lib.genAttrs (lib.attrNames ue4ssVersionMap) mkModFromBranch;
 
   motorTownMods = motorTownModsVersions.${modVersion};
