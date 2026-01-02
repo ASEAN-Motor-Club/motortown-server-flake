@@ -187,7 +187,6 @@ in
       enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
       restartIfChanged = false;
-      reloadIfChanged = true;
       timerConfig = {
         OnCalendar = cfg.restartSchedule;
         AccuracySec = "1min";
@@ -200,7 +199,6 @@ in
       enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
       restartIfChanged = false;
-      reloadIfChanged = true;
       timerConfig = {
         OnCalendar = cfg.restartAnnouncementSchedule;
         AccuracySec = "1min";
