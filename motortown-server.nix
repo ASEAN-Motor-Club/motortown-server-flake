@@ -186,7 +186,6 @@ in
     systemd.timers.motortown-server-restart = {
       enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
-      restartIfChanged = false;
       timerConfig = {
         OnCalendar = cfg.restartSchedule;
         AccuracySec = "1min";
@@ -198,7 +197,6 @@ in
     systemd.timers.motortown-server-restart-announcement = {
       enable = cfg.restartSchedule != null;
       description = "Timer to restart the server";
-      restartIfChanged = false;
       timerConfig = {
         OnCalendar = cfg.restartAnnouncementSchedule;
         AccuracySec = "1min";
