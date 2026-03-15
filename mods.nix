@@ -1,156 +1,12 @@
 { pkgs, lib, modVersion ? "v0.31.0-rc8", enableExternalMods ? {}, engineIni ? "" }:
 let
-  # Prefetch with:
-  # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
-
   ue4ssAddons = ./ue4ss;
 
-
-
-  motorTownModsVersions = {
-    "dev" = {
-      ue4ss = ./UE4SS_v5;
-      mod = null;
-      shared = null;
-      useBindMount = true;
-    };
-    "v0.20.0" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.0/MotorTownMods_v0.20.0.zip";
-        hash = "sha256-/SVDl3HCOxl4bT92I7kdQBAaXavwz/Hp9/bvYvMhm1E=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    # Working, do not change
-    "v0.20.1" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.1/MotorTownMods_v0.20.1.zip";
-        # hash = "sha256-0UxNMQlzYeF8VvkLmANppwIBfSOnNi9JTSLsumErE4c=";
-        hash = "sha256-IrNKxQrFHICzrNcYKNjQQ7mvLXKF41CzwDWfUswhS0o=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.2" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.2/MotorTownMods_v0.20.2.zip";
-        hash = "sha256-AMRYrod/wuwP9lYc3hY0bVfm/I3pG8wncspVaxQ/nYQ=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.4" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.4/MotorTownMods_v0.20.4.zip";
-        hash = "sha256-AmeNTTaGqtTrqGSIp4Okf8LOLiksVOim+zolOsg9jsk=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.5" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.5/MotorTownMods_v0.20.5.zip";
-        hash = "sha256-Xee84ZDu7P6xpqVzdeWKOX/0I4qcafe1b+AgdeZS/HU=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.6" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.6/MotorTownMods_v0.20.6.zip";
-        hash = "sha256-5zdMAoyAviSnLLnR7cLKoUyXUkwBNuMTsy5W5Gby52Q=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.7" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.7/MotorTownMods_v0.20.7.zip";
-        hash = "sha256-DBLJauIEpDHdYHKviySQ3dVIxD7kD+w03o/qrUBJ/hg=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.8" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.8/MotorTownMods_v0.20.8.zip";
-        hash = "sha256-YCYStJ/T5QYo23dpq5pDl4VA+9hUqkDFbeXGtscGBTU=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.20.9" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.9/MotorTownMods_v0.20.9.zip";
-        hash = "sha256-cTx08+XnPTYg+6Ol0gCwo53SY/mKvY/2gGqp781KBJ4=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.30.0" = let
-      release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.30.0/MotorTownMods_v0.30.0.zip";
-        hash = "sha256-YEQMtij/WoSEAVVVYgdA4kP5zkzhkHc2gTc3hKbyHCQ=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.31.0-rc1" = let
-      release = pkgs.fetchzip {
-        url = "https://www.aseanmotorclub.com/releases/MotorTownMods_v0.31.0-rc1.zip";
-        hash = "sha256-Hue4cnpxf9YfbIBWPqYqyypsDcPgt9cXKUfKuOmEzIQ=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-    "v0.31.0-rc8" = let
-      release = pkgs.fetchzip {
-        url = "https://www.aseanmotorclub.com/releases/MotorTownMods_v0.31.0-rc8.zip";
-        hash = "sha256-ntk8gyg/A25L15VNPcKxnpw5pP0TVnWJTkfLzU6ByqM=";
-        stripRoot = false;
-      };
-    in {
-      ue4ss = release;
-      mod = "${release}/ue4ss/Mods/MotorTownMods";
-      shared = "${release}/ue4ss/Mods/shared";
-    };
-  };
-
-  motorTownMods = { useBindMount = false; } // motorTownModsVersions.${modVersion};
+  # URL resolution: v0.2* releases are on GitHub, everything else on aseanmotorclub.com
+  modUrl =
+    if lib.hasPrefix "v0.2" modVersion
+    then "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/${modVersion}/MotorTownMods_${modVersion}.zip"
+    else "https://www.aseanmotorclub.com/releases/MotorTownMods_${modVersion}.zip";
 
   externalModsScripts = lib.attrsets.mapAttrsToList
     (name: enable: if enable
@@ -179,13 +35,40 @@ ${engineIni}'';
         cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
     fi
 
-    ${if motorTownMods.useBindMount then ''
-      cp --no-preserve=mode,ownership "${motorTownMods.ue4ss}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+    ${if modVersion == "dev" then ''
+      # Dev mode: use bind mount
+      cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
       cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     '' else ''
+      # Runtime download mode
+      MOD_VERSION="${modVersion}"
+      MOD_URL="${modUrl}"
+      CACHE_DIR="$STATE_DIRECTORY/.mod-cache"
+      CACHE_FILE="$CACHE_DIR/MotorTownMods_$MOD_VERSION.zip"
+      EXTRACT_DIR="$CACHE_DIR/extracted-$MOD_VERSION"
+
+      mkdir -p "$CACHE_DIR"
+
+      # Download if not cached
+      if [ ! -f "$CACHE_FILE" ]; then
+        echo "Downloading mod $MOD_VERSION from $MOD_URL..."
+        ${pkgs.curl}/bin/curl -fSL -o "$CACHE_FILE.tmp" "$MOD_URL"
+        mv "$CACHE_FILE.tmp" "$CACHE_FILE"
+      else
+        echo "Using cached mod: $CACHE_FILE"
+      fi
+
+      # Extract if not already extracted (or version changed)
+      if [ ! -d "$EXTRACT_DIR" ]; then
+        rm -rf "$CACHE_DIR"/extracted-*  # Clean old extractions
+        mkdir -p "$EXTRACT_DIR"
+        ${pkgs.unzip}/bin/unzip -o "$CACHE_FILE" -d "$EXTRACT_DIR"
+      fi
+
+      # Install
       rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-      cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-      cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+      cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
+      cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
     ''}
 
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
@@ -197,5 +80,5 @@ ${engineIni}'';
     cp --no-preserve=mode,ownership -r ${engineIniFile} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
   '';
 in {
-  inherit installModsScriptBin motorTownMods;
+  inherit installModsScriptBin;
 }

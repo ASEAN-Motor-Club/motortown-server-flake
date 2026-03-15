@@ -18,7 +18,6 @@
           mods = import ./mods.nix {inherit pkgs; lib = pkgs.lib;};
         in {
           default = mods.installModsScriptBin;
-          mod = mods.motorTownMods.mod;
         });
       nixosModules.default = import ./motortown-server.nix;
       nixosModules.logger = import ./logger.nix;
