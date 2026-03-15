@@ -1,4 +1,4 @@
-{ pkgs, lib, modVersion ? "v0.31.0-rc3", enableExternalMods ? {}, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v0.31.0-rc4", enableExternalMods ? {}, engineIni ? "" }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
@@ -137,9 +137,9 @@ let
       mod = "${release}/ue4ss/Mods/MotorTownMods";
       shared = "${release}/ue4ss/Mods/shared";
     };
-    "v0.31.0-rc3" = let
+    "v0.31.0-rc4" = let
       release = pkgs.fetchzip {
-        url = "https://www.aseanmotorclub.com/releases/MotorTownMods_v0.31.0-rc3.zip";
+        url = "https://www.aseanmotorclub.com/releases/MotorTownMods_v0.31.0-rc4.zip";
         hash = "sha256-M6ygTbvKnOR9BXLnJAlzmabRB8Z/GQZ7QRKPz8IXbF4=";
         stripRoot = false;
       };
