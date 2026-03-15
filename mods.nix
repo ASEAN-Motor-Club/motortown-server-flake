@@ -1,101 +1,23 @@
-{ pkgs, lib, modVersion ? "v19", enableExternalMods ? {}, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v0.30.0", enableExternalMods ? {}, engineIni ? "" }:
 let
   # Prefetch with:
   # nix hash to-sri --type sha256 $(nix-prefetch-url --unpack <URL>)
 
   ue4ssAddons = ./ue4ss;
 
-  # Map mod versions to their UE4SS version
-  ue4ssVersionMap = {
-    "v12" = "v4";
-    "v19" = "v5";
-  };
 
-  mkModFromBranch = version: {
-    ue4ss = ./${if ue4ssVersionMap.${version} == "v4" then "UE4SS_v4" else "UE4SS_v5"};
-    mod = pkgs.applyPatches {
-      name = "MotorTownMods-${version}";
-      src = ./MTDediMod-versions/${version};
-      patches = [];
-      prePatch = ''
-        find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-      '';
-      postPatch = ''
-        find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-      '';
-    };
-    shared = ./shared;
-  };
 
   motorTownModsVersions = {
     "dev" = {
-      ue4ss = ./UE4SS_v5;
-      mod = pkgs.applyPatches {
-        name = "MotorTownMods-dev";
-        src = ./MTDediMod-versions/v19;
-        patches = [];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = ./shared;
-    };
-    "v0.8.9-amc" = {
-      ue4ss = pkgs.fetchzip {
-        url = "https://github.com/drpsyko101/RE-UE4SS/releases/download/experimental/zDEV-UE4SS_v3.0.1-431-gb9c82d4.zip";
-        hash = "sha256-X3lkcAgiuHbeKEMeKbXnHw/ZfDnYgntH0oO3HRJPkJE=";
-        stripRoot = false;
-      };
-      mod = pkgs.applyPatches {
-        name = "MotorTownMods-v0.8.9";
-        src = pkgs.fetchzip {
-          url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.8/MotorTownMods_v0.8.9.zip";
-          hash = "sha256-K9kzWGa5GUDVxJeHPUeN/hGfYBs8C+21rzzEqvIDj6c=";
-        };
-        patches = [
-          ./patches/event_owner.patch
-          ./patches/sign_contract_webhook.patch
-          ./patches/batch_webhook.patch
-          ./patches/money_transfer.patch
-          ./patches/passenger_arrived_webhook.patch
-          ./patches/contract_arrived_webhook.patch
-          ./patches/cargo_dumped_webhook.patch
-          ./patches/fix_teleport_player.patch
-          ./patches/set_money_webhook.patch
-          ./patches/tow_request_arrived_webhook.patch
-          ./patches/join_leave_event.patch
-          ./patches/player_send_chat.patch
-          ./patches/fix_vehicle_serialization.patch
-          ./patches/pull_webhook.patch
-          ./patches/safe_hooks.patch
-          ./patches/guard_transfer_money.patch
-          ./patches/tp_no_vehicles.patch
-        ];
-        prePatch = ''
-          find ./Scripts -type f -exec sed -i 's/\r$//' {} +;
-        '';
-        postPatch = ''
-          find ./Scripts -type f -exec sed -i 's/$/\r/' {} +;
-        '';
-      };
-      shared = pkgs.fetchzip {
-        url = "https://github.com/drpsyko101/MotorTownMods/releases/download/v0.9/shared.zip";
-        hash = "sha256-vHMj89ohLveSnVjo02dwRoVPKHcwhJxjhzfU041mkc0=";
-      };
-    };
-    "dev-cpp" = {
       ue4ss = ./UE4SS_v5;
       mod = null;
       shared = null;
       useBindMount = true;
     };
-    "v0.20.1" = let
+    "v0.20.0" = let
       release = pkgs.fetchzip {
-        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.1/MotorTownMods_v0.20.1.zip";
-        hash = "sha256-7qaD7Xkc2qN+IkIrHLTl3VdieaI6uApi6grcs/rGxEI=";
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.0/MotorTownMods_v0.20.0.zip";
+        hash = "sha256-/SVDl3HCOxl4bT92I7kdQBAaXavwz/Hp9/bvYvMhm1E=";
         stripRoot = false;
       };
     in {
@@ -103,9 +25,121 @@ let
       mod = "${release}/ue4ss/Mods/MotorTownMods";
       shared = "${release}/ue4ss/Mods/shared";
     };
-  } // lib.genAttrs (lib.attrNames ue4ssVersionMap) mkModFromBranch;
+    # Working, do not change
+    "v0.20.1" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.1/MotorTownMods_v0.20.1.zip";
+        # hash = "sha256-0UxNMQlzYeF8VvkLmANppwIBfSOnNi9JTSLsumErE4c=";
+        hash = "sha256-IrNKxQrFHICzrNcYKNjQQ7mvLXKF41CzwDWfUswhS0o=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.2" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.2/MotorTownMods_v0.20.2.zip";
+        hash = "sha256-AMRYrod/wuwP9lYc3hY0bVfm/I3pG8wncspVaxQ/nYQ=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.4" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.4/MotorTownMods_v0.20.4.zip";
+        hash = "sha256-AmeNTTaGqtTrqGSIp4Okf8LOLiksVOim+zolOsg9jsk=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.5" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.5/MotorTownMods_v0.20.5.zip";
+        hash = "sha256-Xee84ZDu7P6xpqVzdeWKOX/0I4qcafe1b+AgdeZS/HU=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.6" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.6/MotorTownMods_v0.20.6.zip";
+        hash = "sha256-5zdMAoyAviSnLLnR7cLKoUyXUkwBNuMTsy5W5Gby52Q=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.7" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.7/MotorTownMods_v0.20.7.zip";
+        hash = "sha256-DBLJauIEpDHdYHKviySQ3dVIxD7kD+w03o/qrUBJ/hg=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.8" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.8/MotorTownMods_v0.20.8.zip";
+        hash = "sha256-YCYStJ/T5QYo23dpq5pDl4VA+9hUqkDFbeXGtscGBTU=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.20.9" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.20.9/MotorTownMods_v0.20.9.zip";
+        hash = "sha256-cTx08+XnPTYg+6Ol0gCwo53SY/mKvY/2gGqp781KBJ4=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.30.0" = let
+      release = pkgs.fetchzip {
+        url = "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/v0.30.0/MotorTownMods_v0.30.0.zip";
+        hash = "sha256-YEQMtij/WoSEAVVVYgdA4kP5zkzhkHc2gTc3hKbyHCQ=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+    "v0.31.0-rc1" = let
+      release = pkgs.fetchzip {
+        url = "https://www.aseanmotorclub.com/releases/MotorTownMods_v0.31.0-rc1.zip";
+        hash = "sha256-Hue4cnpxf9YfbIBWPqYqyypsDcPgt9cXKUfKuOmEzIQ=";
+        stripRoot = false;
+      };
+    in {
+      ue4ss = release;
+      mod = "${release}/ue4ss/Mods/MotorTownMods";
+      shared = "${release}/ue4ss/Mods/shared";
+    };
+  };
 
-  motorTownMods = motorTownModsVersions.${modVersion};
+  motorTownMods = { useBindMount = false; } // motorTownModsVersions.${modVersion};
 
   externalModsScripts = lib.attrsets.mapAttrsToList
     (name: enable: if enable
@@ -128,23 +162,21 @@ ${engineIni}'';
     set -xeu
     LOG_FILE="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.log"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    BACKUP_LOG="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.$TIMESTAMP.log"
+    BACKUP_LOG="$STATE_DIRECTORY/MotorTown/Binaries/Win64/UE4SS.$TIMESTAMP.log"
 
     if [ -f "$LOG_FILE" ]; then
         cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
     fi
 
-    ${if motorTownMods.useBindMount or false then ''
+    ${if motorTownMods.useBindMount then ''
       cp --no-preserve=mode,ownership "${motorTownMods.ue4ss}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+      cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     '' else ''
+      rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
       cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
       cp --no-preserve=mode,ownership -r ${motorTownMods.ue4ss}/version.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-      rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-      cp --no-preserve=mode,ownership -r ${motorTownMods.mod} "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/MotorTownMods"
-      cp --no-preserve=mode,ownership -r ${motorTownMods.shared}/* "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/Mods/shared"
     ''}
 
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS-settings.ini "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
 
     # Paks

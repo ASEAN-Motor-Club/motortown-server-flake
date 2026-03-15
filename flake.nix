@@ -43,7 +43,7 @@
               mountPoint = "/var/lib/motortown-server";
               hostPath = hostStateForContainer name;
             };
-            bindMounts."/var/lib/mtdedimod-dev" = lib.mkIf (backendOptions.motortown-server.modVersion == "dev-cpp") {
+            bindMounts."/var/lib/mtdedimod-dev" = lib.mkIf (backendOptions.motortown-server.modVersion == "dev") {
               isReadOnly = false;
               hostPath = "/var/lib/mtdedimod-dev/ue4ss";
               mountPoint = "/var/lib/motortown-server/MotorTown/Binaries/Win64/ue4ss";
