@@ -12,7 +12,7 @@ Arguments:
   target                SSH target (e.g., root@server)
 
 Options:
-  -p, --path PATH       Path to MTDediMod source (default: \$PWD/MTDediMod)
+  -p, --path PATH       Path to MTDediMod source (default: \$PWD/../MTDediMod)
   -r, --restart [NAME]  Restart container after deploy (default name: motortown-server-test)
   -l, --reload          Reload mods via API (stops server first)
   -n, --no-build        Skip building, use existing package
@@ -32,7 +32,7 @@ EOF
 }
 
 # Defaults
-MTDEDIMOD_PATH="${MTDEDIMOD_PATH:-$PWD/MTDediMod}"
+MTDEDIMOD_PATH="${MTDEDIMOD_PATH:-$PWD/../MTDediMod}"
 CONTAINER_NAME="motortown-server-test"
 TARGET=""
 NO_BUILD="${NO_BUILD:-false}"
