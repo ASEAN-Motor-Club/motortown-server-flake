@@ -1,12 +1,9 @@
-{ pkgs, lib, modVersion ? "v0.31.0-rc8", enableExternalMods ? {}, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v0.31.0", enableExternalMods ? {}, engineIni ? "" }:
 let
   ue4ssAddons = ./ue4ss;
 
-  # URL resolution: v0.2* releases are on GitHub, everything else on aseanmotorclub.com
-  modUrl =
-    if lib.hasPrefix "v0.2" modVersion
-    then "https://github.com/ASEAN-Motor-Club/MTDediMod/releases/download/${modVersion}/MotorTownMods_${modVersion}.zip"
-    else "https://www.aseanmotorclub.com/releases/MotorTownMods_${modVersion}.zip";
+  # Local path on the host (bind-mounted read-only into containers)
+  modLocalPath = "/var/lib/mod-releases/MotorTownMods_${modVersion}.zip";
 
   externalModsScripts = lib.attrsets.mapAttrsToList
     (name: enable: if enable
@@ -40,29 +37,21 @@ ${engineIni}'';
       cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
       cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
     '' else ''
-      # Runtime download mode
+      # Install mod from local releases directory
       MOD_VERSION="${modVersion}"
-      MOD_URL="${modUrl}"
-      CACHE_DIR="$STATE_DIRECTORY/.mod-cache"
-      CACHE_FILE="$CACHE_DIR/MotorTownMods_$MOD_VERSION.zip"
-      EXTRACT_DIR="$CACHE_DIR/extracted-$MOD_VERSION"
+      MOD_FILE="${modLocalPath}"
+      EXTRACT_DIR="$STATE_DIRECTORY/.mod-cache/extracted-$MOD_VERSION"
 
-      mkdir -p "$CACHE_DIR"
-
-      # Download if not cached
-      if [ ! -f "$CACHE_FILE" ]; then
-        echo "Downloading mod $MOD_VERSION from $MOD_URL..."
-        ${pkgs.curl}/bin/curl -fSL -o "$CACHE_FILE.tmp" "$MOD_URL"
-        mv "$CACHE_FILE.tmp" "$CACHE_FILE"
-      else
-        echo "Using cached mod: $CACHE_FILE"
+      if [ ! -f "$MOD_FILE" ]; then
+        echo "ERROR: Mod file not found: $MOD_FILE"
+        exit 1
       fi
 
       # Extract if not already extracted (or version changed)
       if [ ! -d "$EXTRACT_DIR" ]; then
-        rm -rf "$CACHE_DIR"/extracted-*  # Clean old extractions
+        rm -rf "$STATE_DIRECTORY/.mod-cache"/extracted-*  # Clean old extractions
         mkdir -p "$EXTRACT_DIR"
-        ${pkgs.unzip}/bin/unzip -o "$CACHE_FILE" -d "$EXTRACT_DIR"
+        ${pkgs.unzip}/bin/unzip -o "$MOD_FILE" -d "$EXTRACT_DIR"
       fi
 
       # Install

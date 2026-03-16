@@ -47,6 +47,10 @@
               hostPath = "/var/lib/mtdedimod-dev/ue4ss";
               mountPoint = "/var/lib/motortown-server/MotorTown/Binaries/Win64/ue4ss";
             };
+            bindMounts."/var/lib/mod-releases" = {
+              isReadOnly = true;
+              hostPath = "/var/lib/mod-releases";
+            };
             config = { config, pkgs, lib, ... }: ({
               imports = [
                 self.nixosModules.default
