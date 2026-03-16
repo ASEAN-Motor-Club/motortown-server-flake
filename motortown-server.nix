@@ -7,6 +7,17 @@ let
     inherit (cfg) enableExternalMods engineIni modVersion;
   };
 
+  # Discord notification helper (curl-based, same pattern as db_backup.nix)
+  discordNotify = pkgs.writeShellScript "discord-notify" ''
+    WEBHOOK_URL="$1"
+    MESSAGE="$2"
+    ${pkgs.curl}/bin/curl -s -X POST "$WEBHOOK_URL" \
+      -H "Content-Type: application/json" \
+      -d "$MESSAGE" > /dev/null 2>&1 || true
+  '';
+
+  ue4ssLogPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Binaries/Win64/ue4ss/UE4SS.log";
+
   # Paths
   steamPath = "/home/${cfg.user}/.steam/steam";
 
@@ -88,6 +99,9 @@ in
         WINEDLLOVERRIDES = if cfg.enableMods then "version=n,b" else "";
       } // cfg.environment;
       restartIfChanged = false;
+      unitConfig = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
+        OnFailure = "motortown-server-crash-notify.service";
+      };
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
@@ -111,6 +125,51 @@ in
         export XDG_RUNTIME_DIR="$STATE_DIRECTORY/run"
         export STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata"
         exec ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" Jeju_World?listen? -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
+      '';
+    };
+
+    # Crash notification: fires on OnFailure (non-clean exits only)
+    systemd.services.motortown-server-crash-notify = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
+      description = "Send motortown-server crash logs to Discord";
+      serviceConfig = {
+        Type = "oneshot";
+        EnvironmentFile = cfg.discordWebhookEnvironmentFile;
+      };
+      path = [ pkgs.systemd pkgs.coreutils pkgs.gnused pkgs.jq ];
+      script = ''
+        set -euo pipefail
+
+        # Grab the last 50 lines of the server journal
+        JOURNAL_LOGS=$(journalctl -u motortown-server.service -n 50 --no-pager --output=short 2>&1 || echo "(failed to read journal)")
+
+        # Grab the last 50 lines of UE4SS.log
+        UE4SS_LOG="${ue4ssLogPath}"
+        if [ -f "$UE4SS_LOG" ]; then
+          UE4SS_LOGS=$(tail -n 50 "$UE4SS_LOG" 2>&1 || echo "(failed to read UE4SS.log)")
+        else
+          UE4SS_LOGS="(UE4SS.log not found)"
+        fi
+
+        # Truncate to fit Discord embed field limits (1024 chars per field)
+        JOURNAL_LOGS=$(echo "$JOURNAL_LOGS" | tail -c 900)
+        UE4SS_LOGS=$(echo "$UE4SS_LOGS" | tail -c 900)
+
+        # Build JSON payload with jq for proper escaping
+        PAYLOAD=$(jq -n \
+          --arg journal "$JOURNAL_LOGS" \
+          --arg ue4ss "$UE4SS_LOGS" \
+          '{
+            embeds: [{
+              title: "💥 motortown-server crashed",
+              color: 14495300,
+              fields: [
+                { name: "📋 Server Journal (last lines)", value: ("```\n" + $journal + "\n```") },
+                { name: "📋 UE4SS.log (last lines)", value: ("```\n" + $ue4ss + "\n```") }
+              ]
+            }]
+          }')
+
+        ${discordNotify} "$DISCORD_ERRORS_WEBHOOK" "$PAYLOAD"
       '';
     };
 

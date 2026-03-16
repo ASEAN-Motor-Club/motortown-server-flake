@@ -185,6 +185,11 @@ let
       default = 2514;
       description = "The RELP server port to send logs to";
     };
+    discordWebhookEnvironmentFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Path to env file containing DISCORD_ERRORS_WEBHOOK for crash notifications";
+    };
   };
 
 in {
