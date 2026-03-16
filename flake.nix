@@ -31,11 +31,23 @@
         openPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
           backendOptions.motortown-server.port backendOptions.motortown-server.queryPort
         ]) cfg);
-        mkContainer = name: backendOptions: {
+        mkContainer = name: backendOptions: let
+          mt = backendOptions.motortown-server;
+          gameForwardPorts = lib.optionals backendOptions.privateNetwork [
+            { containerPort = mt.port; hostPort = mt.port; protocol = "tcp"; }
+            { containerPort = mt.port; hostPort = mt.port; protocol = "udp"; }
+            { containerPort = mt.queryPort; hostPort = mt.queryPort; protocol = "tcp"; }
+            { containerPort = mt.queryPort; hostPort = mt.queryPort; protocol = "udp"; }
+          ];
+        in {
           name = "motortown-server-${name}";
           value = {
             autoStart = true;
             restartIfChanged = false;
+            inherit (backendOptions) privateNetwork;
+            hostAddress = lib.mkIf backendOptions.privateNetwork backendOptions.hostAddress;
+            localAddress = lib.mkIf backendOptions.privateNetwork backendOptions.localAddress;
+            forwardPorts = gameForwardPorts ++ backendOptions.extraForwardPorts;
             bindMounts.${backendOptions.motortown-server.credentialsFile}.isReadOnly = true;
             bindMounts.${name} = {
               isReadOnly = false;
@@ -76,6 +88,26 @@
               };
               options.motortown-server = lib.mkOption {
                 type = lib.types.submodule (import ./backend-options.nix);
+              };
+              options.privateNetwork = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Give the container its own private network namespace";
+              };
+              options.hostAddress = lib.mkOption {
+                type = lib.types.str;
+                default = "10.250.0.1";
+                description = "Host-side IP on the veth pair";
+              };
+              options.localAddress = lib.mkOption {
+                type = lib.types.str;
+                default = "10.250.0.2";
+                description = "Container-side IP on the veth pair";
+              };
+              options.extraForwardPorts = lib.mkOption {
+                type = lib.types.listOf lib.types.attrs;
+                default = [];
+                description = "Additional ports to forward from host to container";
               };
             });
           };
