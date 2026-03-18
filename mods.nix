@@ -1,4 +1,4 @@
-{ pkgs, lib, modVersion ? "v0.31.0", enableExternalMods ? {}, engineIni ? "" }:
+{ pkgs, lib, modVersion ? "v0.31.0", enableExternalMods ? {}, engineIni ? "", maxFps ? 120 }:
 let
   ue4ssAddons = ./ue4ss;
 
@@ -17,7 +17,7 @@ ConnectionTimeout=6000.0
 InitialConnectTimeout=6000.0
 
 [SystemSettings]
-t.MaxFPS=120
+t.MaxFPS=${toString maxFps}
 
 [ConsoleVariables]
 ${engineIni}'';

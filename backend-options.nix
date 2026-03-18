@@ -112,6 +112,11 @@ let
       type = types.str;
       default = "";
     };
+    maxFps = mkOption {
+      type = types.ints.positive;
+      default = 120;
+      description = "Maximum server FPS (t.MaxFPS in Engine.ini)";
+    };
     postInstallScript = mkOption {
       type = types.str;
       default = "";
