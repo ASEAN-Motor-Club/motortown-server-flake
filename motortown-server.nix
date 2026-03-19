@@ -107,6 +107,7 @@ in
         User = cfg.user;
         Group = "modders";
         Restart = "always";
+        TimeoutStartSec = "30m";
         EnvironmentFile = cfg.credentialsFile;
         StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
