@@ -51,7 +51,6 @@ let
       +login $STEAM_USERNAME $STEAM_PASSWORD \
       +app_update ${gameAppId} -beta ${cfg.betaBranch} -betapassword ${cfg.betaBranchPassword} validate \
       +quit
-    cp $STATE_DIRECTORY/*.dll "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
   '';
 in
 {

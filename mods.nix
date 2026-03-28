@@ -5,9 +5,19 @@ let
   # Local path on the host (bind-mounted read-only into containers)
   modLocalPath = "/var/lib/mod-releases/MotorTownMods_${modVersion}.zip";
 
+  modBaseUrl = "https://www.aseanmotorclub.com/releases/mods";
+
   externalModsScripts = lib.attrsets.mapAttrsToList
     (name: enable: if enable
-      then "cp --no-preserve=mode,ownership -r ${./mods}/${name}.pak $STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
+      then ''
+        MOD_PAK_CACHE="$STATE_DIRECTORY/.mod-cache/paks/${name}.pak"
+        mkdir -p "$STATE_DIRECTORY/.mod-cache/paks"
+        if [ ! -f "$MOD_PAK_CACHE" ]; then
+          echo "Downloading external mod: ${name}"
+          ${pkgs.curl}/bin/curl -fSL -o "$MOD_PAK_CACHE" "${modBaseUrl}/${name}.pak"
+        fi
+        cp --no-preserve=mode,ownership "$MOD_PAK_CACHE" "$STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
+      ''
       else "")
     enableExternalMods;
 
