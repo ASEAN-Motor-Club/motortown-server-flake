@@ -106,7 +106,11 @@ in
         User = cfg.user;
         Group = "modders";
         Restart = "always";
+        RestartSec = "10s";
+        MemorySwapMax = "0";  # Never swap — clean OOM kill beats corrupted P2P buffers
         TimeoutStartSec = "30m";
+        TimeoutStopSec = "30s";
+        LimitNOFILE = "65536";
         EnvironmentFile = cfg.credentialsFile;
         StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
