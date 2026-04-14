@@ -114,6 +114,16 @@ in
         EnvironmentFile = cfg.credentialsFile;
         StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
+
+        # --- Performance tuning ---
+        # Pin to physical cores 0-3 (excludes SMT siblings 6-9) to isolate
+        # from backend services and give GameThread a full physical core.
+        CPUAffinity = "0 1 2 3";
+        # Scheduling priority above backend services (nice 0)
+        Nice = "-5";
+        # I/O priority for game asset loading
+        IOSchedulingClass = "best-effort";
+        IOSchedulingPriority = 0;
       };
       preStart = ''
         if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
@@ -225,6 +235,28 @@ in
         }
         minutes=$(minutes_to_time "08:30")
         curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
+      '';
+    };
+
+    systemd.services.motortown-server-update = {
+      description = "Update Motortown Dedicated Server via steamcmd";
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        User = cfg.user;
+        Group = "modders";
+        EnvironmentFile = cfg.credentialsFile;
+        StateDirectory = cfg.stateDirectory;
+        TimeoutStartSec = "30m";
+      };
+      environment = {
+        STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
+      };
+      script = ''
+        systemctl stop motortown-server.service
+        ${lib.getExe serverUpdateScript}
+        ${cfg.postInstallScript}
+        systemctl start motortown-server.service
       '';
     };
 

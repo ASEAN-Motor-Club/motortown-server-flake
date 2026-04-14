@@ -71,9 +71,32 @@ once under the `user` you provided, in order for the dedicated server to launch 
 
 ## Updating the Dedicated Server
 
-By default, restarting the service will not update the server.
-To force an update, delete `/var/lib/motortown-server/DedicatedServerConfig.json`, then restart the server.
-The missing file would be detected, which triggers the update.
+A dedicated `motortown-server-update` systemd service handles game updates. It stops the server, runs `steamcmd` to update, then restarts — all in one shot.
+
+### Via trigger file (recommended)
+
+The backend writes a trigger file watched by a host systemd `.path` unit. This is the same pattern used for restarts:
+
+```bash
+# From the host or backend (inside the container):
+systemctl start motortown-server-update.service
+```
+
+Or via the trigger file:
+
+```bash
+echo "update requested at $(date)" > /var/lib/motortown-update-trigger/trigger
+```
+
+The host's `motortown-update-triggered.service` clears the trigger and starts the update. The update service stops the server, runs steamcmd, then starts the server again.
+
+### Via backend
+
+Set the `UPDATE_MOTORTOWN_SCRIPT` environment variable on the amc-backend service. The backend can call this script to trigger an update cycle.
+
+### First boot
+
+The initial game download still happens automatically via `preStart` when `DedicatedServerConfig.json` does not exist (first boot). Subsequent updates should use the update service.
 
 ## Mod Development Workflow
 
