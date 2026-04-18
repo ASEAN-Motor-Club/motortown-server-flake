@@ -2,42 +2,68 @@
 {
   inputs = {
     self.submodules = true;
-    self.lfs = true;  # Automatically fetch Git LFS files (.pak mods)
+    self.lfs = true; # Automatically fetch Git LFS files (.pak mods)
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
   };
 
-  outputs =
-    { self, nixpkgs, systems, ... }@inputs:
-    let
-      eachSystem = f: nixpkgs.lib.genAttrs (import systems) (system: f nixpkgs.legacyPackages.${system});
-    in
-    {
-      packages = eachSystem (pkgs:
-        let
-          mods = import ./mods.nix {inherit pkgs; lib = pkgs.lib;};
-        in {
-          default = mods.installModsScriptBin;
-        });
-      nixosModules.default = import ./motortown-server.nix;
-      nixosModules.logger = import ./logger.nix;
+  outputs = {
+    self,
+    nixpkgs,
+    systems,
+    ...
+  } @ inputs: let
+    eachSystem = f: nixpkgs.lib.genAttrs (import systems) (system: f nixpkgs.legacyPackages.${system});
+  in {
+    packages = eachSystem (pkgs: let
+      mods = import ./mods.nix {
+        inherit pkgs;
+        lib = pkgs.lib;
+      };
+    in {
+      default = mods.installModsScriptBin;
+    });
+    nixosModules.default = import ./motortown-server.nix;
+    nixosModules.logger = import ./logger.nix;
 
-      nixosModules.containers =  { config, pkgs, lib, ... }:
-      with lib;
-      let
+    nixosModules.containers = {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
+      with lib; let
         hostConfig = config;
         cfg = config.services.motortown-server-containers;
         hostStateForContainer = name: "/var/lib/motortown-server-${name}";
         openPorts = lib.flatten (lib.attrsets.mapAttrsToList (name: backendOptions: [
-          backendOptions.motortown-server.port backendOptions.motortown-server.queryPort
-        ]) cfg);
+            backendOptions.motortown-server.port
+            backendOptions.motortown-server.queryPort
+          ])
+          cfg);
         mkContainer = name: backendOptions: let
           mt = backendOptions.motortown-server;
           gameForwardPorts = lib.optionals backendOptions.privateNetwork [
-            { containerPort = mt.port; hostPort = mt.port; protocol = "tcp"; }
-            { containerPort = mt.port; hostPort = mt.port; protocol = "udp"; }
-            { containerPort = mt.queryPort; hostPort = mt.queryPort; protocol = "tcp"; }
-            { containerPort = mt.queryPort; hostPort = mt.queryPort; protocol = "udp"; }
+            {
+              containerPort = mt.port;
+              hostPort = mt.port;
+              protocol = "tcp";
+            }
+            {
+              containerPort = mt.port;
+              hostPort = mt.port;
+              protocol = "udp";
+            }
+            {
+              containerPort = mt.queryPort;
+              hostPort = mt.queryPort;
+              protocol = "tcp";
+            }
+            {
+              containerPort = mt.queryPort;
+              hostPort = mt.queryPort;
+              protocol = "udp";
+            }
           ];
         in {
           name = "motortown-server-${name}";
@@ -63,15 +89,22 @@
               isReadOnly = true;
               hostPath = "/var/lib/mod-releases";
             };
-            config = { config, pkgs, lib, ... }: ({
-              imports = [
-                self.nixosModules.default
-                hostConfig.services.motortown-server-containers-env
-                backendOptions.config
-              ] ++ backendOptions.imports;
+            config = {
+              config,
+              pkgs,
+              lib,
+              ...
+            }: {
+              imports =
+                [
+                  self.nixosModules.default
+                  hostConfig.services.motortown-server-containers-env
+                  backendOptions.config
+                ]
+                ++ backendOptions.imports;
               system.stateVersion = "25.05";
-              services.motortown-server = { logsTag = name; } // backendOptions.motortown-server;
-            });
+              services.motortown-server = {logsTag = name;} // backendOptions.motortown-server;
+            };
           };
         };
       in {
@@ -118,34 +151,37 @@
         };
 
         config = {
-          systemd.tmpfiles.settings = lib.attrsets.concatMapAttrs (name: backendOptions: {
-            "motortown-server-${name}" = {
-              ${hostStateForContainer name} = {
-                d = {
-                  group = "modders";
-                  mode = "0755";
-                  user = "root";
+          systemd.tmpfiles.settings =
+            lib.attrsets.concatMapAttrs (name: backendOptions: {
+              "motortown-server-${name}" = {
+                ${hostStateForContainer name} = {
+                  d = {
+                    group = "modders";
+                    mode = "0755";
+                    user = "root";
+                  };
+                };
+              };
+            })
+            cfg
+            // {
+              "mtdedimod-dev" = {
+                "/var/lib/mtdedimod-dev" = {
+                  d = {
+                    group = "modders";
+                    mode = "0775";
+                    user = "root";
+                  };
+                };
+                "/var/lib/mtdedimod-dev/ue4ss" = {
+                  d = {
+                    group = "modders";
+                    mode = "0775";
+                    user = "root";
+                  };
                 };
               };
             };
-          }) cfg // {
-            "mtdedimod-dev" = {
-              "/var/lib/mtdedimod-dev" = {
-                d = {
-                  group = "modders";
-                  mode = "0775";
-                  user = "root";
-                };
-              };
-              "/var/lib/mtdedimod-dev/ue4ss" = {
-                d = {
-                  group = "modders";
-                  mode = "0775";
-                  user = "root";
-                };
-              };
-            };
-          };
 
           networking.firewall.allowedTCPPorts = openPorts;
           networking.firewall.allowedUDPPorts = openPorts;
@@ -154,13 +190,13 @@
         };
       };
 
-      devShells = eachSystem (pkgs: {
-        default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            (pkgs.writeShellScriptBin "deploy-scripts" (builtins.readFile ./deploy_mod.sh))
-            # Add development dependencies here
-          ];
-        };
-      });
-    };
+    devShells = eachSystem (pkgs: {
+      default = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          (pkgs.writeShellScriptBin "deploy-scripts" (builtins.readFile ./deploy_mod.sh))
+          # Add development dependencies here
+        ];
+      };
+    });
+  };
 }

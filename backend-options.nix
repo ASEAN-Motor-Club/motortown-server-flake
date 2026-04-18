@@ -1,6 +1,9 @@
-{ lib, config, ... }:
-with lib;
-let
+{
+  lib,
+  config,
+  ...
+}:
+with lib; let
   cfg = config;
   serverConfigOptions = {
     ServerName = mkOption {
@@ -167,7 +170,7 @@ let
       default = "The server will restart in $minutes minutes. You can rejoin 5 minutes after that";
     };
     dedicatedServerConfig = mkOption {
-      type = types.submodule { options = serverConfigOptions; };
+      type = types.submodule {options = serverConfigOptions;};
       description = "DedicatedServerConfig.json. See the README in the dedi files.";
       default = null;
     };
@@ -196,7 +199,6 @@ let
       description = "Path to env file containing DISCORD_ERRORS_WEBHOOK for crash notifications";
     };
   };
-
 in {
   options = backendOptions;
 }

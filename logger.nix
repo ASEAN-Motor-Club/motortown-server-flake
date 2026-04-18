@@ -1,9 +1,12 @@
-{ lib, pkgs, config, ...}:
-with lib;
-let
-  cfg = config.services.motortown-server-logger;
-in
 {
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.services.motortown-server-logger;
+in {
   options.services.motortown-server-logger = {
     enable = lib.mkEnableOption "log streaming";
     serverLogsPath = mkOption {

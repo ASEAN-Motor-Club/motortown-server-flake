@@ -1,5 +1,11 @@
-{ pkgs, lib, modVersion ? "v0.31.0", enableExternalMods ? {}, engineIni ? "", maxFps ? 120 }:
-let
+{
+  pkgs,
+  lib,
+  modVersion ? "v0.31.0",
+  enableExternalMods ? {},
+  engineIni ? "",
+  maxFps ? 120,
+}: let
   ue4ssAddons = ./ue4ss;
 
   # Local path on the host (bind-mounted read-only into containers)
@@ -7,8 +13,10 @@ let
 
   modBaseUrl = "https://www.aseanmotorclub.com/releases/mods";
 
-  externalModsScripts = lib.attrsets.mapAttrsToList
-    (name: enable: if enable
+  externalModsScripts =
+    lib.attrsets.mapAttrsToList
+    (name: enable:
+      if enable
       then ''
         MOD_PAK_CACHE="$STATE_DIRECTORY/.mod-cache/paks/${name}.pak"
         mkdir -p "$STATE_DIRECTORY/.mod-cache/paks"
@@ -22,15 +30,15 @@ let
     enableExternalMods;
 
   engineIniFile = pkgs.writeText "engine.ini" ''
-[/Script/OnlineSubsystemUtils.IpNetDriver]
-ConnectionTimeout=6000.0
-InitialConnectTimeout=6000.0
+    [/Script/OnlineSubsystemUtils.IpNetDriver]
+    ConnectionTimeout=6000.0
+    InitialConnectTimeout=6000.0
 
-[SystemSettings]
-t.MaxFPS=${toString maxFps}
+    [SystemSettings]
+    t.MaxFPS=${toString maxFps}
 
-[ConsoleVariables]
-${engineIni}'';
+    [ConsoleVariables]
+    ${engineIni}'';
 
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
     set -xeu
@@ -42,33 +50,37 @@ ${engineIni}'';
         cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
     fi
 
-    ${if modVersion == "dev" then ''
-      # Dev mode: use bind mount
-      cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-      cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-    '' else ''
-      # Install mod from local releases directory
-      MOD_VERSION="${modVersion}"
-      MOD_FILE="${modLocalPath}"
-      EXTRACT_DIR="$STATE_DIRECTORY/.mod-cache/extracted-$MOD_VERSION"
+    ${
+      if modVersion == "dev"
+      then ''
+        # Dev mode: use bind mount
+        cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+        cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+      ''
+      else ''
+        # Install mod from local releases directory
+        MOD_VERSION="${modVersion}"
+        MOD_FILE="${modLocalPath}"
+        EXTRACT_DIR="$STATE_DIRECTORY/.mod-cache/extracted-$MOD_VERSION"
 
-      if [ ! -f "$MOD_FILE" ]; then
-        echo "ERROR: Mod file not found: $MOD_FILE"
-        exit 1
-      fi
+        if [ ! -f "$MOD_FILE" ]; then
+          echo "ERROR: Mod file not found: $MOD_FILE"
+          exit 1
+        fi
 
-      # Extract if not already extracted (or version changed)
-      if [ ! -d "$EXTRACT_DIR" ]; then
-        rm -rf "$STATE_DIRECTORY/.mod-cache"/extracted-*  # Clean old extractions
-        mkdir -p "$EXTRACT_DIR"
-        ${pkgs.unzip}/bin/unzip -o "$MOD_FILE" -d "$EXTRACT_DIR"
-      fi
+        # Extract if not already extracted (or version changed)
+        if [ ! -d "$EXTRACT_DIR" ]; then
+          rm -rf "$STATE_DIRECTORY/.mod-cache"/extracted-*  # Clean old extractions
+          mkdir -p "$EXTRACT_DIR"
+          ${pkgs.unzip}/bin/unzip -o "$MOD_FILE" -d "$EXTRACT_DIR"
+        fi
 
-      # Install
-      rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-      cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-      cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-    ''}
+        # Install
+        rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+        cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
+        cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+      ''
+    }
 
     cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
 

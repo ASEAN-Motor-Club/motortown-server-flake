@@ -1,6 +1,10 @@
-{ lib, pkgs, config, ...}:
-with lib;
-let
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+with lib; let
   cfg = config.services.motortown-server;
   mods = import ./mods.nix {
     inherit pkgs lib;
@@ -28,9 +32,10 @@ let
   apiPort = cfg.dedicatedServerConfig.HostWebAPIServerPort;
 
   # Restore $ sign for variable interpolation
-  restartMessageParam = builtins.replaceStrings
-    [ "%24" ]
-    [ "$" ]
+  restartMessageParam =
+    builtins.replaceStrings
+    ["%24"]
+    ["$"]
     (lib.strings.escapeURL cfg.restartMessage);
 
   serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
@@ -52,8 +57,7 @@ let
       +app_update ${gameAppId} -beta ${cfg.betaBranch} -betapassword ${cfg.betaBranchPassword} validate \
       +quit
   '';
-in
-{
+in {
   imports = [
     ./logger.nix
   ];
@@ -67,15 +71,16 @@ in
       allowedUDPPorts = [cfg.port cfg.queryPort];
     };
 
-    nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-      "steam"
-      "steamcmd"
-      "steam-original"
-      "steam-unwrapped"
-      "steam-run"
-      "motortown-server"
-      "steamworks-sdk-redist"
-    ];
+    nixpkgs.config.allowUnfreePredicate = pkg:
+      builtins.elem (lib.getName pkg) [
+        "steam"
+        "steamcmd"
+        "steam-original"
+        "steam-unwrapped"
+        "steam-run"
+        "motortown-server"
+        "steamworks-sdk-redist"
+      ];
 
     programs.steam = {
       enable = true;
@@ -86,17 +91,22 @@ in
     };
 
     users.groups.modders = {
-      members = [ cfg.user ];
+      members = [cfg.user];
     };
 
     systemd.services.motortown-server = {
-      wantedBy = [ "multi-user.target" ]; 
-      after = [ "network.target" ];
+      wantedBy = ["multi-user.target"];
+      after = ["network.target"];
       description = "Motortown Dedicated Server";
-      environment = {
-        STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
-        WINEDLLOVERRIDES = if cfg.enableMods then "version=n,b" else "";
-      } // cfg.environment;
+      environment =
+        {
+          STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
+          WINEDLLOVERRIDES =
+            if cfg.enableMods
+            then "version=n,b"
+            else "";
+        }
+        // cfg.environment;
       restartIfChanged = false;
       unitConfig = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
         OnFailure = "motortown-server-crash-notify.service";
@@ -107,7 +117,7 @@ in
         Group = "modders";
         Restart = "always";
         RestartSec = "10s";
-        MemorySwapMax = "0";  # Never swap — clean OOM kill beats corrupted P2P buffers
+        MemorySwapMax = "0"; # Never swap — clean OOM kill beats corrupted P2P buffers
         TimeoutStartSec = "30m";
         TimeoutStopSec = "30s";
         LimitNOFILE = "65536";
@@ -130,7 +140,11 @@ in
           ${lib.getExe serverUpdateScript}
           ${cfg.postInstallScript}
         fi
-        ${if cfg.enableMods then (lib.getExe mods.installModsScriptBin) else ""}
+        ${
+          if cfg.enableMods
+          then (lib.getExe mods.installModsScriptBin)
+          else ""
+        }
         cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
@@ -149,7 +163,7 @@ in
         Type = "oneshot";
         EnvironmentFile = cfg.discordWebhookEnvironmentFile;
       };
-      path = [ pkgs.systemd pkgs.coreutils pkgs.gnused pkgs.jq ];
+      path = [pkgs.systemd pkgs.coreutils pkgs.gnused pkgs.jq];
       script = ''
         set -euo pipefail
 
@@ -202,7 +216,7 @@ in
         source ${config.system.build.setEnvironment}
         minutes_to_time() {
             local target_time="$1"
-            
+
             # Check if the target time is provided
             if [ -z "$target_time" ]; then
                 echo "Usage: minutes_to_time HH:MM" >&2
@@ -230,7 +244,7 @@ in
 
             # Calculate the difference in minutes
             local minutes_left=$(( (target_epoch - current_epoch) / 60 ))
-            
+
             echo "$minutes_left"
         }
         minutes=$(minutes_to_time "08:30")
@@ -286,7 +300,7 @@ in
         AccuracySec = "1min";
         Unit = "motortown-server-restart.service";
       };
-      wantedBy = [ "timers.target" ];
+      wantedBy = ["timers.target"];
     };
 
     systemd.timers.motortown-server-restart-announcement = {
@@ -297,7 +311,7 @@ in
         AccuracySec = "1min";
         Unit = "motortown-server-restart-announcement.service";
       };
-      wantedBy = [ "timers.target" ];
+      wantedBy = ["timers.target"];
     };
 
     users.users.${cfg.user} = {
