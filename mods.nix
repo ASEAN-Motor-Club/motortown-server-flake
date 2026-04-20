@@ -11,7 +11,8 @@
   # Local path on the host (bind-mounted read-only into containers)
   modLocalPath = "/var/lib/mod-releases/MotorTownMods_${modVersion}.zip";
 
-  modBaseUrl = "https://www.aseanmotorclub.com/releases/mods";
+  modBaseUrl = "https://www.aseanmotorclub.com/releases";
+  modPakUrl = "${modBaseUrl}/mods";
 
   externalModsScripts =
     lib.attrsets.mapAttrsToList
@@ -22,7 +23,7 @@
         mkdir -p "$STATE_DIRECTORY/.mod-cache/paks"
         if [ ! -f "$MOD_PAK_CACHE" ]; then
           echo "Downloading external mod: ${name}"
-          ${pkgs.curl}/bin/curl -fSL -o "$MOD_PAK_CACHE" "${modBaseUrl}/${name}.pak"
+          ${pkgs.curl}/bin/curl -fSL -o "$MOD_PAK_CACHE" "${modPakUrl}/${name}.pak"
         fi
         cp --no-preserve=mode,ownership "$MOD_PAK_CACHE" "$STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
       ''
@@ -64,8 +65,9 @@
         EXTRACT_DIR="$STATE_DIRECTORY/.mod-cache/extracted-$MOD_VERSION"
 
         if [ ! -f "$MOD_FILE" ]; then
-          echo "ERROR: Mod file not found: $MOD_FILE"
-          exit 1
+          echo "Mod file not in local cache, downloading from releases server..."
+          MOD_DOWNLOAD_URL="${modBaseUrl}/MotorTownMods_${modVersion}.zip"
+          ${pkgs.curl}/bin/curl -fSL -o "$MOD_FILE" "$MOD_DOWNLOAD_URL"
         fi
 
         # Extract if not already extracted (or version changed)
