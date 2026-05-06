@@ -25,6 +25,7 @@
           echo "Downloading external mod: ${name}"
           ${pkgs.curl}/bin/curl -fSL -o "$MOD_PAK_CACHE" "${modPakUrl}/${name}.pak"
         fi
+        rm -f "$STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
         cp --no-preserve=mode,ownership "$MOD_PAK_CACHE" "$STATE_DIRECTORY/MotorTown/Content/Paks/${name}.pak"
       ''
       else "")
@@ -43,9 +44,11 @@
 
   installModsScriptBin = pkgs.writeScriptBin "install-mt-mods" ''
     set -xeu
-    LOG_FILE="$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss/UE4SS.log"
+
+    WIN64_DIR="$STATE_DIRECTORY/MotorTown/Binaries/Win64"
+    LOG_FILE="$WIN64_DIR/ue4ss/UE4SS.log"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    BACKUP_LOG="$STATE_DIRECTORY/MotorTown/Binaries/Win64/UE4SS.$TIMESTAMP.log"
+    BACKUP_LOG="$WIN64_DIR/UE4SS.$TIMESTAMP.log"
 
     if [ -f "$LOG_FILE" ]; then
         cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
@@ -55,8 +58,10 @@
       if modVersion == "dev"
       then ''
         # Dev mode: use bind mount
-        cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
-        cp -r /var/lib/mtdedimod-dev/ue4ss "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
+        rm -f "$WIN64_DIR/version.dll"
+        cp --no-preserve=mode,ownership "${./UE4SS_v5}/version.dll" "$WIN64_DIR/"
+        rm -rf "$WIN64_DIR/ue4ss"
+        cp -r /var/lib/mtdedimod-dev/ue4ss "$WIN64_DIR/ue4ss"
       ''
       else ''
         # Install mod from local releases directory
@@ -65,9 +70,22 @@
         EXTRACT_DIR="$STATE_DIRECTORY/.mod-cache/extracted-$MOD_VERSION"
 
         if [ ! -f "$MOD_FILE" ]; then
-          echo "Mod file not in local cache, downloading from releases server..."
           MOD_DOWNLOAD_URL="${modBaseUrl}/MotorTownMods_${modVersion}.zip"
-          ${pkgs.curl}/bin/curl -fSL -o "$MOD_FILE" "$MOD_DOWNLOAD_URL"
+          echo "Mod file not in local cache, downloading from $MOD_DOWNLOAD_URL ..."
+          if ! ${pkgs.curl}/bin/curl -fSL -o "$MOD_FILE" "$MOD_DOWNLOAD_URL"; then
+            echo ""
+            echo "ERROR: Mod zip not found on release server."
+            echo "  Version: ${modVersion}"
+            echo "  URL:     $MOD_DOWNLOAD_URL"
+            echo ""
+            echo "To fix:"
+            echo "  1. Upload the zip:"
+            echo "     scp MotorTownMods-package.zip root@amc-peripheral:/var/lib/mod-releases/MotorTownMods_${modVersion}.zip"
+            echo "  2. Restart: systemctl restart motortown-server"
+            echo ""
+            echo "Or update modVersion in flake.nix and redeploy."
+            exit 1
+          fi
         fi
 
         # Extract if not already extracted (or version changed)
@@ -77,20 +95,52 @@
           ${pkgs.unzip}/bin/unzip -o "$MOD_FILE" -d "$EXTRACT_DIR"
         fi
 
-        # Install
-        rm -rf "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-        cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$STATE_DIRECTORY/MotorTown/Binaries/Win64"
-        cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/version.dll" "$STATE_DIRECTORY/MotorTown/Binaries/Win64/"
+        # Validate extraction produced the expected files
+        if [ ! -d "$EXTRACT_DIR/ue4ss" ]; then
+          echo "ERROR: Extracted mod zip does not contain ue4ss/ directory."
+          echo "  Zip:     $MOD_FILE"
+          echo "  Extract: $EXTRACT_DIR"
+          echo "The zip may be corrupted. Re-upload and restart."
+          exit 1
+        fi
+        if [ ! -f "$EXTRACT_DIR/version.dll" ]; then
+          echo "ERROR: Extracted mod zip does not contain version.dll."
+          echo "  Zip:     $MOD_FILE"
+          echo "  Extract: $EXTRACT_DIR"
+          echo "The zip may be corrupted. Re-upload and restart."
+          exit 1
+        fi
+
+        # Only install UE4SS files if version changed or ue4ss/ missing
+        UE4SS_DIR="$WIN64_DIR/ue4ss"
+        VERSION_MARKER="$UE4SS_DIR/.installed-mod-version"
+        if [ ! -f "$VERSION_MARKER" ] || [ "$(cat "$VERSION_MARKER")" != "${modVersion}" ]; then
+          # Remove old files before copying. This prevents "Permission denied" when
+          # stale files are owned by root:root (from hot-reload scp or manual install).
+          # cp --no-preserve only sets metadata on the NEW file; it cannot bypass the
+          # write-permission check on the EXISTING file being overwritten.
+          rm -rf "$UE4SS_DIR"
+          rm -f "$WIN64_DIR/version.dll"
+
+          cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$WIN64_DIR"
+          cp --no-preserve=mode,ownership "$EXTRACT_DIR/version.dll" "$WIN64_DIR/"
+          cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$UE4SS_DIR"
+          echo "${modVersion}" > "$VERSION_MARKER"
+        else
+          echo "UE4SS mod ${modVersion} already installed, skipping"
+        fi
       ''
     }
 
-    cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$STATE_DIRECTORY/MotorTown/Binaries/Win64/ue4ss"
-
-    # Paks
-    find $STATE_DIRECTORY/MotorTown/Content/Paks/ -maxdepth 1 -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" -delete
+    # Paks — tolerate errors from root-owned files left by manual installs
+    find "$STATE_DIRECTORY/MotorTown/Content/Paks/" -maxdepth 1 \
+      -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" \
+      -delete 2>/dev/null || true
     ${lib.strings.concatStringsSep "\n" externalModsScripts}
     mkdir -p "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer"
-    cp --no-preserve=mode,ownership -r ${engineIniFile} "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
+    rm -f "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
+    cp --no-preserve=mode,ownership ${engineIniFile} \
+      "$STATE_DIRECTORY/MotorTown/Saved/Config/WindowsServer/Engine.ini"
   '';
 in {
   inherit installModsScriptBin;

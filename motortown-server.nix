@@ -117,6 +117,8 @@ in {
         Group = "modders";
         Restart = "always";
         RestartSec = "10s";
+        StartLimitBurst = 5;
+        StartLimitIntervalSec = 300;
         MemorySwapMax = "0"; # Never swap — clean OOM kill beats corrupted P2P buffers
         TimeoutStartSec = "30m";
         TimeoutStopSec = "30s";
@@ -145,6 +147,7 @@ in {
           then (lib.getExe mods.installModsScriptBin)
           else ""
         }
+        rm -f "$STATE_DIRECTORY/DedicatedServerConfig.json"
         cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
@@ -316,6 +319,10 @@ in {
 
     users.users.${cfg.user} = {
       isNormalUser = true;
+      openssh.authorizedKeys.keys = [
+        ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcMiNGgqQtOeACMso3CgZz2J3X8Ne8RxsZrQcsnoewU fmnxl-m2''
+        ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO75UM3IHNzJKUxgABH6OHa/hxfQIoxTs+nGUtSU1TID''
+      ];
       packages = [
         pkgs.steamcmd
         mods.installModsScriptBin
