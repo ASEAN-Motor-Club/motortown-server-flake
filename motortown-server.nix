@@ -151,6 +151,24 @@ in {
         cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
+
+        # Cap the ServerLog directory so rsyslog imfile can't wedge on fd exhaustion.
+        # The game writes one timestamped log per boot and never cleans them up.
+        # If too many *.log files accumulate, rsyslog's imfile (which opens every
+        # matched file) blows the fd soft-limit and silently stops tailing the
+        # current log — which breaks game-chat -> Discord forwarding.
+        # Keep the R newest files (cover >1 week of Mon/Thu restarts), archive the rest.
+        log_dir="$STATE_DIRECTORY/MotorTown/Saved/ServerLog"
+        log_keep=${toString cfg.keepServerLogs}
+        if [ -d "$log_dir" ]; then
+          mkdir -p "$log_dir/archive"
+          ls -t "$log_dir"/*.log 2>/dev/null | tail -n +$((log_keep + 1)) | while read -r f; do
+            case " $f " in
+              *" /archive/ "*) continue ;;
+            esac
+            mv "$f" "$log_dir/archive/"
+          done
+        fi
       '';
       script = ''
         export XDG_RUNTIME_DIR="$STATE_DIRECTORY/run"

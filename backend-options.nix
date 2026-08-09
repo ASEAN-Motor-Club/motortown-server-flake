@@ -160,6 +160,11 @@ with lib; let
       default = "Mon,Thu *-*-* 08:30:00";
       description = "The scheduled restart time(s), in systemd OnCalendar format: https://man.archlinux.org/man/systemd.time.7#CALENDAR_EVENTS";
     };
+    keepServerLogs = mkOption {
+      type = types.int;
+      default = 10;
+      description = "Number of most-recent ServerLog/*.log files to keep before archiving older ones on each server start. Caps rsyslog imfile's fopen count so it can't hit the fd soft-limit and silently stop tailing the live game log (which breaks game-chat -> Discord forwarding).";
+    };
     restartAnnouncementSchedule = mkOption {
       type = types.str;
       default = "Mon,Thu *-*-* 08:15,25,29";
