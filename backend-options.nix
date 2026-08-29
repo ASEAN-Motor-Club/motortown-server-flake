@@ -165,6 +165,11 @@ with lib; let
       default = 10;
       description = "Number of most-recent ServerLog/*.log files to keep before archiving older ones on each server start. Caps rsyslog imfile's fopen count so it can't hit the fd soft-limit and silently stop tailing the live game log (which breaks game-chat -> Discord forwarding).";
     };
+    keepUe4ssLogBackups = mkOption {
+      type = types.int;
+      default = 7;
+      description = "Number of most-recent UE4SS.<timestamp>.log backups to keep in MotorTown/Binaries/Win64; older ones are deleted on each server start. The preStart backs up UE4SS.log on every start and previously never cleaned up — the pile grew to 64G and filled the root disk, which fails the preStart cp and strands the service in a failed state.";
+    };
     restartAnnouncementSchedule = mkOption {
       type = types.str;
       default = "Mon,Thu *-*-* 08:15,25,29";
