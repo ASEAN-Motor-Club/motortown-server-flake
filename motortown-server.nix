@@ -8,7 +8,7 @@ with lib; let
   cfg = config.services.motortown-server;
   mods = import ./mods.nix {
     inherit pkgs lib;
-    inherit (cfg) enableExternalMods engineIni modVersion maxFps;
+    inherit (cfg) enableExternalMods engineIni modVersion maxFps keepUe4ssLogBackups;
   };
 
   # Discord notification helper (curl-based, same pattern as db_backup.nix)

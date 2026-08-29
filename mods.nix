@@ -5,6 +5,7 @@
   enableExternalMods ? {},
   engineIni ? "",
   maxFps ? 120,
+  keepUe4ssLogBackups ? 7,
 }: let
   ue4ssAddons = ./ue4ss;
 
@@ -49,6 +50,17 @@
     LOG_FILE="$WIN64_DIR/ue4ss/UE4SS.log"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_LOG="$WIN64_DIR/UE4SS.$TIMESTAMP.log"
+
+    # Prune old UE4SS.log backups BEFORE taking the new one. This runs on every
+    # start and used to grow unbounded — the pile reached 64G and filled the
+    # root disk, at which point the backup cp below fails (No space left) and
+    # the whole preStart aborts, stranding the unit in a failed state past its
+    # start-rate limit. Keeping the N newest (including the one taken just
+    # after this) bounds the pile; pruning first lets a full disk self-heal.
+    ue4ss_keep=${toString keepUe4ssLogBackups}
+    ls -t "$WIN64_DIR"/UE4SS.*.log 2>/dev/null | tail -n +$((ue4ss_keep + 1)) | while read -r f; do
+      rm -f "$f"
+    done
 
     if [ -f "$LOG_FILE" ]; then
         cp --no-preserve=mode,ownership "$LOG_FILE" "$BACKUP_LOG"
