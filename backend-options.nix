@@ -34,6 +34,34 @@ with lib; let
       type = types.bool;
       default = true;
     };
+    bAllowPoliceVehicleByPlayerRole = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Set 'true' to restrict police vehicles by player role; 'false' allows
+        any player. Only PoliceRolePlayers entries get police-role permissions
+        when true.
+      '';
+    };
+    PoliceRolePlayers = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          UniqueNetId = mkOption {
+            type = types.str;
+            description = "The steam id of the player";
+          };
+          Nickname = mkOption {
+            type = types.str;
+            description = "The in-game nickname of the player";
+          };
+        };
+      });
+      default = [];
+      description = ''
+        Players who receive the police role permissions. Only used when
+        bAllowPoliceVehicleByPlayerRole is true.
+      '';
+    };
     bAllowCorporation = mkOption {
       type = types.bool;
       default = true;
