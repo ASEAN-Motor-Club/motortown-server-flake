@@ -229,8 +229,16 @@ in {
       restartIfChanged = false;
       serviceConfig = {
         Type = "oneshot";
-        Restart = "on-failure";
-        EnvironmentFile = config.system.build.setEnvironment;
+        # Do NOT retry: this unit POSTs to the in-game chat API, which stops
+        # answering when the server is hung (process alive, mod HTTP dead).
+        # With Restart=on-failure an unbounded loop ran 639 starts/day on
+        # staging (2026-10-23..28), each start re-emitting the env warnings.
+        Restart = "no";
+        # NOTE: config.system.build.setEnvironment is a SHELL script
+        # ("export FOO=bar"), NOT systemd EnvironmentFile syntax — passing it as
+        # EnvironmentFile made systemd log "Ignoring invalid environment
+        # assignment" ~26x per start. The script below sources it itself.
+        TimeoutStartSec = "30s";
         KillSignal = "SIGKILL";
       };
       script = ''
@@ -269,7 +277,7 @@ in {
             echo "$minutes_left"
         }
         minutes=$(minutes_to_time "08:30")
-        curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
+        curl -fsS --max-time 10 --retry 2 --retry-delay 2 -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
       '';
     };
 
@@ -301,10 +309,20 @@ in {
       environment = {
       };
       restartIfChanged = false;
+      unitConfig = {
+        # Bound the retry window: a failing restart must not hammer the game
+        # service every 100ms. 3 attempts / 5min, then give up until the next
+        # scheduled timer run.
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = 300;
+      };
       serviceConfig = {
         Type = "oneshot";
         Restart = "on-failure";
-        EnvironmentFile = config.system.build.setEnvironment;
+        RestartSec = "30s";
+        # See the announcement unit above: setEnvironment is a shell script,
+        # not systemd EnvironmentFile syntax (source'd by the script instead).
+        TimeoutStartSec = "5min";
         KillSignal = "SIGKILL";
       };
       script = ''
