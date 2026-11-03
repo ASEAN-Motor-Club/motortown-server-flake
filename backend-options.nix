@@ -126,6 +126,11 @@ with lib; let
   backendOptions = {
     enable = mkEnableOption "motortown server";
     enableMods = mkEnableOption "mods";
+    mapName = mkOption {
+      type = types.str;
+      default = "Jeju_World";
+      description = "Map to load at launch. Stock maps use the short name (\"Jeju_World\"); mod maps use the package path (e.g. \"/Game/Mods/C1/Maps/C1\"). The \"?listen?\" suffix is appended automatically.";
+    };
     modVersion = mkOption {
       type = types.str;
       default = "v0.7.5";
