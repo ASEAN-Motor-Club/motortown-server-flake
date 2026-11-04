@@ -6,6 +6,10 @@
 }:
 with lib; let
   cfg = config.services.motortown-server;
+  mods = import ./mods.nix {
+    inherit pkgs lib;
+    inherit (cfg) enableExternalMods engineIni modVersion maxFps;
+  };
 
   # Discord notification helper (curl-based, same pattern as db_backup.nix)
   discordNotify = pkgs.writeShellScript "discord-notify" ''
@@ -34,52 +38,63 @@ with lib; let
     ["$"]
     (lib.strings.escapeURL cfg.restartMessage);
 
-  # steamcmd installer, generated per server so an extra instance can install
-  # and update itself without touching the primary one.
-  mkServerUpdateScript = binName: c:
-    pkgs.writeScriptBin binName ''
-      set -xeu
+  serverUpdateScript = pkgs.writeScriptBin "motortown-update" ''
+    set -xeu
 
-      if [ -z "''${STEAM_USERNAME}" ]; then
-        echo "Error: Environment variable STEAM_USERNAME is not set." >&2
-        exit 1
-      fi
+    if [ -z "''${STEAM_USERNAME}" ]; then
+      echo "Error: Environment variable STEAM_USERNAME is not set." >&2
+      exit 1
+    fi
 
-      if [ -z "''${STEAM_PASSWORD}" ]; then
-        echo "Error: Environment variable STEAM_PASSWORD is not set." >&2
-        exit 1
-      fi
+    if [ -z "''${STEAM_PASSWORD}" ]; then
+      echo "Error: Environment variable STEAM_PASSWORD is not set." >&2
+      exit 1
+    fi
 
-      ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
-        +force_install_dir $STATE_DIRECTORY \
-        +login $STEAM_USERNAME $STEAM_PASSWORD \
-        +app_update ${gameAppId} -beta ${c.betaBranch} -betapassword ${c.betaBranchPassword} validate \
-        +quit
-    '';
+    ${pkgs.steamcmd}/bin/steamcmd +@sSteamCmdForcePlatformType windows \
+      +force_install_dir $STATE_DIRECTORY \
+      +login $STEAM_USERNAME $STEAM_PASSWORD \
+      +app_update ${gameAppId} -beta ${cfg.betaBranch} -betapassword ${cfg.betaBranchPassword} validate \
+      +quit
+  '';
+in {
+  imports = [
+    ./logger.nix
+  ];
+  options.services.motortown-server = mkOption {
+    type = types.submodule (import ./backend-options.nix);
+  };
 
-  serverUpdateScript = mkServerUpdateScript "motortown-update" cfg;
-
-  # One Motor Town dedicated server as its own systemd unit. `unit` is
-  # "motortown-server" for the primary service or "motortown-server-<name>"
-  # for an entry of services.motortown-server.additionalInstances.
-  mkInstance = {
-    unit,
-    c,
-    updateScript,
-    configFileName,
-  }: let
-    mods = import ./mods.nix {
-      inherit pkgs lib;
-      inherit (c) enableExternalMods engineIni modVersion maxFps;
-    };
-    configFile = pkgs.writeText configFileName (builtins.toJSON c.dedicatedServerConfig);
-  in {
-    networking.firewall = lib.mkIf c.openFirewall {
-      allowedTCPPorts = [c.port c.queryPort];
-      allowedUDPPorts = [c.port c.queryPort];
+  config = mkIf cfg.enable {
+    networking.firewall = lib.mkIf cfg.openFirewall {
+      allowedTCPPorts = [cfg.port cfg.queryPort];
+      allowedUDPPorts = [cfg.port cfg.queryPort];
     };
 
-    systemd.services.${unit} = {
+    nixpkgs.config.allowUnfreePredicate = pkg:
+      builtins.elem (lib.getName pkg) [
+        "steam"
+        "steamcmd"
+        "steam-original"
+        "steam-unwrapped"
+        "steam-run"
+        "motortown-server"
+        "steamworks-sdk-redist"
+      ];
+
+    programs.steam = {
+      enable = true;
+      extraCompatPackages = with pkgs; [
+        proton-ge-bin
+      ];
+      protontricks.enable = true;
+    };
+
+    users.groups.modders = {
+      members = [cfg.user];
+    };
+
+    systemd.services.motortown-server = {
       wantedBy = ["multi-user.target"];
       after = ["network.target"];
       description = "Motortown Dedicated Server";
@@ -87,18 +102,18 @@ with lib; let
         {
           STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
           WINEDLLOVERRIDES =
-            if c.enableMods
+            if cfg.enableMods
             then "version=n,b"
             else "";
         }
-        // c.environment;
+        // cfg.environment;
       restartIfChanged = false;
-      unitConfig = lib.mkIf (c.discordWebhookEnvironmentFile != null) {
+      unitConfig = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
         OnFailure = "motortown-server-crash-notify.service";
       };
       serviceConfig = {
         Type = "simple";
-        User = c.user;
+        User = cfg.user;
         Group = "modders";
         Restart = "always";
         RestartSec = "10s";
@@ -108,8 +123,8 @@ with lib; let
         TimeoutStartSec = "30m";
         TimeoutStopSec = "30s";
         LimitNOFILE = "65536";
-        EnvironmentFile = c.credentialsFile;
-        StateDirectory = c.stateDirectory;
+        EnvironmentFile = cfg.credentialsFile;
+        StateDirectory = cfg.stateDirectory;
         StateDirectoryMode = "770";
 
         # --- Performance tuning ---
@@ -124,16 +139,16 @@ with lib; let
       };
       preStart = ''
         if [[ ! -e "$STATE_DIRECTORY/DedicatedServerConfig.json" ]]; then
-          ${lib.getExe updateScript}
-          ${c.postInstallScript}
+          ${lib.getExe serverUpdateScript}
+          ${cfg.postInstallScript}
         fi
         ${
-          if c.enableMods
+          if cfg.enableMods
           then (lib.getExe mods.installModsScriptBin)
           else ""
         }
         rm -f "$STATE_DIRECTORY/DedicatedServerConfig.json"
-        cp --no-preserve=mode,owner ${configFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
+        cp --no-preserve=mode,owner ${dedicatedServerConfigFile} "$STATE_DIRECTORY/DedicatedServerConfig.json"
         mkdir -p "$STATE_DIRECTORY/compatdata"
         mkdir -p "$STATE_DIRECTORY/run"
 
@@ -144,7 +159,7 @@ with lib; let
         # current log — which breaks game-chat -> Discord forwarding.
         # Keep the R newest files (cover >1 week of Mon/Thu restarts), archive the rest.
         log_dir="$STATE_DIRECTORY/MotorTown/Saved/ServerLog"
-        log_keep=${toString c.keepServerLogs}
+        log_keep=${toString cfg.keepServerLogs}
         if [ -d "$log_dir" ]; then
           mkdir -p "$log_dir/archive"
           ls -t "$log_dir"/*.log 2>/dev/null | tail -n +$((log_keep + 1)) | while read -r f; do
@@ -158,243 +173,186 @@ with lib; let
       script = ''
         export XDG_RUNTIME_DIR="$STATE_DIRECTORY/run"
         export STEAM_COMPAT_DATA_PATH="$STATE_DIRECTORY/compatdata"
-        exec ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" "${c.mapName}?listen?" -server -log -useperfthreads -Port=${toString c.port} -QueryPort=${toString c.queryPort}
+        exec ${pkgs.steam-run}/bin/steam-run ${pkgs.proton-ge-bin.steamcompattool}/proton run "$STATE_DIRECTORY/MotorTown/Binaries/Win64/MotorTownServer-Win64-Shipping.exe" "${cfg.mapName}?listen?" -server -log -useperfthreads -Port=${toString cfg.port} -QueryPort=${toString cfg.queryPort}
       '';
     };
+
+    # Crash notification: fires on OnFailure (non-clean exits only)
+    systemd.services.motortown-server-crash-notify = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
+      description = "Send motortown-server crash logs to Discord";
+      serviceConfig = {
+        Type = "oneshot";
+        EnvironmentFile = cfg.discordWebhookEnvironmentFile;
+      };
+      path = [pkgs.systemd pkgs.coreutils pkgs.gnused pkgs.jq];
+      script = ''
+        set -euo pipefail
+
+        # Grab the last 50 lines of the server journal
+        JOURNAL_LOGS=$(journalctl -u motortown-server.service -n 50 --no-pager --output=short 2>&1 || echo "(failed to read journal)")
+
+        # Grab the last 50 lines of UE4SS.log
+        UE4SS_LOG="${ue4ssLogPath}"
+        if [ -f "$UE4SS_LOG" ]; then
+          UE4SS_LOGS=$(tail -n 50 "$UE4SS_LOG" 2>&1 || echo "(failed to read UE4SS.log)")
+        else
+          UE4SS_LOGS="(UE4SS.log not found)"
+        fi
+
+        # Truncate to fit Discord embed field limits (1024 chars per field)
+        JOURNAL_LOGS=$(echo "$JOURNAL_LOGS" | tail -c 900)
+        UE4SS_LOGS=$(echo "$UE4SS_LOGS" | tail -c 900)
+
+        # Build JSON payload with jq for proper escaping
+        PAYLOAD=$(jq -n \
+          --arg journal "$JOURNAL_LOGS" \
+          --arg ue4ss "$UE4SS_LOGS" \
+          '{
+            embeds: [{
+              title: "💥 motortown-server crashed",
+              color: 14495300,
+              fields: [
+                { name: "📋 Server Journal (last lines)", value: ("```\n" + $journal + "\n```") },
+                { name: "📋 UE4SS.log (last lines)", value: ("```\n" + $ue4ss + "\n```") }
+              ]
+            }]
+          }')
+
+        ${discordNotify} "$DISCORD_ERRORS_WEBHOOK" "$PAYLOAD"
+      '';
+    };
+
+    systemd.services.motortown-server-restart-announcement = {
+      description = "Motortown Dedicated Server Restart Announcement";
+      environment = {
+      };
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        Restart = "on-failure";
+        EnvironmentFile = config.system.build.setEnvironment;
+        KillSignal = "SIGKILL";
+      };
+      script = ''
+        source ${config.system.build.setEnvironment}
+        minutes_to_time() {
+            local target_time="$1"
+
+            # Check if the target time is provided
+            if [ -z "$target_time" ]; then
+                echo "Usage: minutes_to_time HH:MM" >&2
+                return 1
+            fi
+
+            # Get the current time in seconds since the epoch
+            local current_epoch
+            current_epoch=$(date +%s)
+
+            # Convert the target time to epoch seconds (today's date with the provided time)
+            local target_epoch
+            target_epoch=$(date -d "$(date +%Y-%m-%d) $target_time" +%s 2>/dev/null)
+
+            # Check if the time conversion was successful
+            if [ $? -ne 0 ]; then
+                echo "Invalid time format. Please use HH:MM (e.g., 15:30)." >&2
+                return 1
+            fi
+
+            # If the target time has already passed today, set it for tomorrow
+            if [ "$target_epoch" -le "$current_epoch" ]; then
+                target_epoch=$(date -d "tomorrow $target_time" +%s)
+            fi
+
+            # Calculate the difference in minutes
+            local minutes_left=$(( (target_epoch - current_epoch) / 60 ))
+
+            echo "$minutes_left"
+        }
+        minutes=$(minutes_to_time "08:30")
+        curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
+      '';
+    };
+
+    systemd.services.motortown-server-update = {
+      description = "Update Motortown Dedicated Server via steamcmd";
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        User = cfg.user;
+        Group = "modders";
+        EnvironmentFile = cfg.credentialsFile;
+        StateDirectory = cfg.stateDirectory;
+        TimeoutStartSec = "30m";
+      };
+      environment = {
+        STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
+      };
+      script = ''
+        systemctl stop motortown-server.service
+        ${lib.getExe serverUpdateScript}
+        ${cfg.postInstallScript}
+        systemctl start motortown-server.service
+      '';
+    };
+
+    systemd.services.motortown-server-restart = {
+      enable = cfg.restartSchedule != null;
+      description = "Motortown Dedicated Server Restart";
+      environment = {
+      };
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        Restart = "on-failure";
+        EnvironmentFile = config.system.build.setEnvironment;
+        KillSignal = "SIGKILL";
+      };
+      script = ''
+        source ${config.system.build.setEnvironment}
+        systemctl restart motortown-server
+      '';
+    };
+
+    systemd.timers.motortown-server-restart = {
+      enable = cfg.restartSchedule != null;
+      description = "Timer to restart the server";
+      timerConfig = {
+        OnCalendar = cfg.restartSchedule;
+        AccuracySec = "1min";
+        Unit = "motortown-server-restart.service";
+      };
+      wantedBy = ["timers.target"];
+    };
+
+    systemd.timers.motortown-server-restart-announcement = {
+      enable = cfg.restartSchedule != null;
+      description = "Timer to restart the server";
+      timerConfig = {
+        OnCalendar = cfg.restartAnnouncementSchedule;
+        AccuracySec = "1min";
+        Unit = "motortown-server-restart-announcement.service";
+      };
+      wantedBy = ["timers.target"];
+    };
+
+    users.users.${cfg.user} = {
+      isNormalUser = true;
+      openssh.authorizedKeys.keys = [
+        ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcMiNGgqQtOeACMso3CgZz2J3X8Ne8RxsZrQcsnoewU fmnxl-m2''
+        ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO75UM3IHNzJKUxgABH6OHa/hxfQIoxTs+nGUtSU1TID''
+      ];
+      packages = [
+        pkgs.steamcmd
+        mods.installModsScriptBin
+      ];
+    };
+
+    services.motortown-server-logger = {
+      enable = cfg.enableLogStreaming;
+      serverLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog";
+      modLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Binaries/Win64/ue4ss/UE4SS.log";
+      tag = cfg.logsTag;
+      inherit (cfg) relpServerHost relpServerPort;
+    };
   };
-in {
-  imports = [
-    ./logger.nix
-  ];
-  options.services.motortown-server = mkOption {
-    type = types.submodule (import ./backend-options.nix);
-  };
-
-  config = mkIf cfg.enable (mkMerge [
-    # Primary dedicated server: unchanged behaviour, unit `motortown-server`.
-    (mkInstance {
-      unit = "motortown-server";
-      c = cfg;
-      updateScript = serverUpdateScript;
-      configFileName = "DedicatedServerConfig.json";
-    })
-
-    # Extra instances: one independent unit each, without the side services.
-    (mkMerge (
-      lib.mapAttrsToList (name: c:
-        mkIf c.enable (mkInstance {
-          unit = "motortown-server-${name}";
-          c = c;
-          updateScript = mkServerUpdateScript "motortown-server-${name}-update" c;
-          configFileName = "DedicatedServerConfig-${name}.json";
-        }))
-      cfg.additionalInstances
-    ))
-
-    {
-      nixpkgs.config.allowUnfreePredicate = pkg:
-        builtins.elem (lib.getName pkg) [
-          "steam"
-          "steamcmd"
-          "steam-original"
-          "steam-unwrapped"
-          "steam-run"
-          "motortown-server"
-          "steamworks-sdk-redist"
-        ];
-
-      programs.steam = {
-        enable = true;
-        extraCompatPackages = with pkgs; [
-          proton-ge-bin
-        ];
-        protontricks.enable = true;
-      };
-
-      users.groups.modders = {
-        members = [cfg.user];
-      };
-
-      # Crash notification: fires on OnFailure (non-clean exits only)
-      systemd.services.motortown-server-crash-notify = lib.mkIf (cfg.discordWebhookEnvironmentFile != null) {
-        description = "Send motortown-server crash logs to Discord";
-        serviceConfig = {
-          Type = "oneshot";
-          EnvironmentFile = cfg.discordWebhookEnvironmentFile;
-        };
-        path = [pkgs.systemd pkgs.coreutils pkgs.gnused pkgs.jq];
-        script = ''
-          set -euo pipefail
-
-          # Grab the last 50 lines of the server journal
-          JOURNAL_LOGS=$(journalctl -u motortown-server.service -n 50 --no-pager --output=short 2>&1 || echo "(failed to read journal)")
-
-          # Grab the last 50 lines of UE4SS.log
-          UE4SS_LOG="${ue4ssLogPath}"
-          if [ -f "$UE4SS_LOG" ]; then
-            UE4SS_LOGS=$(tail -n 50 "$UE4SS_LOG" 2>&1 || echo "(failed to read UE4SS.log)")
-          else
-            UE4SS_LOGS="(UE4SS.log not found)"
-          fi
-
-          # Truncate to fit Discord embed field limits (1024 chars per field)
-          JOURNAL_LOGS=$(echo "$JOURNAL_LOGS" | tail -c 900)
-          UE4SS_LOGS=$(echo "$UE4SS_LOGS" | tail -c 900)
-
-          # Build JSON payload with jq for proper escaping
-          PAYLOAD=$(jq -n \
-            --arg journal "$JOURNAL_LOGS" \
-            --arg ue4ss "$UE4SS_LOGS" \
-            '{
-              embeds: [{
-                title: "💥 motortown-server crashed",
-                color: 14495300,
-                fields: [
-                  { name: "📋 Server Journal (last lines)", value: ("```\n" + $journal + "\n```") },
-                  { name: "📋 UE4SS.log (last lines)", value: ("```\n" + $ue4ss + "\n```") }
-                ]
-              }]
-            }')
-
-          ${discordNotify} "$DISCORD_ERRORS_WEBHOOK" "$PAYLOAD"
-        '';
-      };
-
-      systemd.services.motortown-server-restart-announcement = {
-        description = "Motortown Dedicated Server Restart Announcement";
-        environment = {
-        };
-        restartIfChanged = false;
-        serviceConfig = {
-          Type = "oneshot";
-          Restart = "on-failure";
-          EnvironmentFile = config.system.build.setEnvironment;
-          KillSignal = "SIGKILL";
-        };
-        script = ''
-          source ${config.system.build.setEnvironment}
-          minutes_to_time() {
-              local target_time="$1"
-
-              # Check if the target time is provided
-              if [ -z "$target_time" ]; then
-                  echo "Usage: minutes_to_time HH:MM" >&2
-                  return 1
-              fi
-
-              # Get the current time in seconds since the epoch
-              local current_epoch
-              current_epoch=$(date +%s)
-
-              # Convert the target time to epoch seconds (today's date with the provided time)
-              local target_epoch
-              target_epoch=$(date -d "$(date +%Y-%m-%d) $target_time" +%s 2>/dev/null)
-
-              # Check if the time conversion was successful
-              if [ $? -ne 0 ]; then
-                  echo "Invalid time format. Please use HH:MM (e.g., 15:30)." >&2
-                  return 1
-              fi
-
-              # If the target time has already passed today, set it for tomorrow
-              if [ "$target_epoch" -le "$current_epoch" ]; then
-                  target_epoch=$(date -d "tomorrow $target_time" +%s)
-              fi
-
-              # Calculate the difference in minutes
-              local minutes_left=$(( (target_epoch - current_epoch) / 60 ))
-
-              echo "$minutes_left"
-          }
-          minutes=$(minutes_to_time "08:30")
-          curl -X POST "http://localhost:${builtins.toString apiPort}/chat?password=${apiPassword}&message=${restartMessageParam}" -d ""
-        '';
-      };
-
-      systemd.services.motortown-server-update = {
-        description = "Update Motortown Dedicated Server via steamcmd";
-        restartIfChanged = false;
-        serviceConfig = {
-          Type = "oneshot";
-          User = cfg.user;
-          Group = "modders";
-          EnvironmentFile = cfg.credentialsFile;
-          StateDirectory = cfg.stateDirectory;
-          TimeoutStartSec = "30m";
-        };
-        environment = {
-          STEAM_COMPAT_CLIENT_INSTALL_PATH = steamPath;
-        };
-        script = ''
-          systemctl stop motortown-server.service
-          ${lib.getExe serverUpdateScript}
-          ${cfg.postInstallScript}
-          systemctl start motortown-server.service
-        '';
-      };
-
-      systemd.services.motortown-server-restart = {
-        enable = cfg.restartSchedule != null;
-        description = "Motortown Dedicated Server Restart";
-        environment = {
-        };
-        restartIfChanged = false;
-        serviceConfig = {
-          Type = "oneshot";
-          Restart = "on-failure";
-          EnvironmentFile = config.system.build.setEnvironment;
-          KillSignal = "SIGKILL";
-        };
-        script = ''
-          source ${config.system.build.setEnvironment}
-          systemctl restart motortown-server
-        '';
-      };
-
-      systemd.timers.motortown-server-restart = {
-        enable = cfg.restartSchedule != null;
-        description = "Timer to restart the server";
-        timerConfig = {
-          OnCalendar = cfg.restartSchedule;
-          AccuracySec = "1min";
-          Unit = "motortown-server-restart.service";
-        };
-        wantedBy = ["timers.target"];
-      };
-
-      systemd.timers.motortown-server-restart-announcement = {
-        enable = cfg.restartSchedule != null;
-        description = "Timer to restart the server";
-        timerConfig = {
-          OnCalendar = cfg.restartAnnouncementSchedule;
-          AccuracySec = "1min";
-          Unit = "motortown-server-restart-announcement.service";
-        };
-        wantedBy = ["timers.target"];
-      };
-
-      users.users.${cfg.user} = {
-        isNormalUser = true;
-        openssh.authorizedKeys.keys = [
-          ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcMiNGgqQtOeACMso3CgZz2J3X8Ne8RxsZrQcsnoewU fmnxl-m2''
-          ''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO75UM3IHNzJKUxgABH6OHa/hxfQIoxTs+nGUtSU1TID''
-        ];
-        packages = [
-          pkgs.steamcmd
-          (import ./mods.nix {
-            inherit pkgs lib;
-            inherit (cfg) enableExternalMods engineIni modVersion maxFps;
-          }).installModsScriptBin
-        ];
-      };
-
-      services.motortown-server-logger = {
-        enable = cfg.enableLogStreaming;
-        serverLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Saved/ServerLog";
-        modLogsPath = "/var/lib/${cfg.stateDirectory}/MotorTown/Binaries/Win64/ue4ss/UE4SS.log";
-        tag = cfg.logsTag;
-        inherit (cfg) relpServerHost relpServerPort;
-      };
-    }
-  ]);
 }

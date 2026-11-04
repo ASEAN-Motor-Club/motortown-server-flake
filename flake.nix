@@ -25,6 +25,10 @@
     });
     nixosModules.default = import ./motortown-server.nix;
     nixosModules.logger = import ./logger.nix;
+    # Extra dedicated servers as their own systemd units (see
+    # services.motortown-server-instances). Separate module on purpose — the
+    # option system recurses if these are rendered from the primary module.
+    nixosModules.instances = import ./motortown-server-instances.nix;
 
     nixosModules.containers = {
       config,
