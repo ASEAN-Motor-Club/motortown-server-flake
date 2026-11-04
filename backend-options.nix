@@ -236,6 +236,22 @@ with lib; let
       default = null;
       description = "Path to env file containing DISCORD_ERRORS_WEBHOOK for crash notifications";
     };
+    additionalInstances = mkOption {
+      type = types.attrsOf (types.submodule (import ./backend-options.nix));
+      default = {};
+      description = ''
+        Extra Motor Town dedicated servers on the same machine, keyed by
+        instance name. Each renders as its own systemd unit
+        `motortown-server-<name>` with its own state directory, ports and pak
+        set, running independently of the primary `motortown-server` service.
+
+        Unlike the primary service an extra instance gets no
+        motortown-server-update / restart timers, no crash notification and no
+        log streaming. Set `stateDirectory` explicitly for every instance (the
+        default is shared with the primary and would collide) and pick free
+        ports.
+      '';
+    };
   };
 in {
   options = backendOptions;
