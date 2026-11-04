@@ -26,6 +26,11 @@
     nixosModules.default = import ./motortown-server.nix;
     nixosModules.logger = import ./logger.nix;
 
+    # Factory for extra servers as separate systemd units (see
+    # instance-fragment.nix). A plain function, not a NixOS option — rendering
+    # instances of an attrsOf-submodule option from a module recurses.
+    lib.mkExtraInstance = import ./instance-fragment.nix;
+
     nixosModules.containers = {
       config,
       pkgs,
