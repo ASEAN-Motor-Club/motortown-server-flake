@@ -238,26 +238,5 @@ with lib; let
     };
   };
 in {
-  options =
-    backendOptions
-    // {
-      # Deliberately built from `backendOptions` (which does NOT contain this
-      # option) so the type cannot recurse into itself.
-      additionalInstances = mkOption {
-        type = types.attrsOf (types.submodule {options = backendOptions;});
-        default = {};
-        description = ''
-          Extra Motor Town dedicated servers on the same machine, keyed by
-          instance name. Each renders as its own systemd unit
-          `motortown-server-<name>` with its own state directory, ports and pak
-          set, running independently of the primary `motortown-server` service.
-
-          Unlike the primary service an extra instance gets no
-          motortown-server-update / restart timers, no crash notification and no
-          log streaming. Set `stateDirectory` explicitly for every instance (the
-          default is shared with the primary and would collide) and pick free
-          ports.
-        '';
-      };
-    };
+  options = backendOptions;
 }
