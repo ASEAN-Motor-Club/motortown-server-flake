@@ -124,11 +124,18 @@
 
           cp --no-preserve=mode,ownership -r "$EXTRACT_DIR/ue4ss" "$WIN64_DIR"
           cp --no-preserve=mode,ownership "$EXTRACT_DIR/version.dll" "$WIN64_DIR/"
-          cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$UE4SS_DIR"
           echo "${modVersion}" > "$VERSION_MARKER"
         else
           echo "UE4SS mod ${modVersion} already installed, skipping"
         fi
+
+        # Signatures are refreshed on EVERY boot, outside the version gate above.
+        # They are plain data, and a game patch breaks them without changing the
+        # mod version - a signature-only fix must not require a mod release to
+        # take effect. Remove first: `cp -r src dst` where dst/src exists nests
+        # one level deeper on the second boot.
+        rm -rf "$UE4SS_DIR/UE4SS_Signatures"
+        cp --no-preserve=mode,ownership -r ${ue4ssAddons}/UE4SS_Signatures "$UE4SS_DIR"
       ''
     }
 
