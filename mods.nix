@@ -147,6 +147,18 @@
       ''
     }
 
+    # On EVERY boot, patch the ACTIVE UE4SS-settings.ini in place. In prod
+    # (modVersion != "dev") that file comes from MotorTownMods_${modVersion}.zip,
+    # not from ./UE4SS_v5 — and the zip's settings are newer than ./UE4SS_v5's
+    # (which is an older schema: bUseUObjectArrayCache = false, missing
+    # DefaultExecuteInGameThreadMethod). So we must never overwrite the active
+    # file wholesale; only flip the 5 verified-unused hooks to 0, regardless of
+    # whether .installed-mod-version already matches modVersion. This runs even
+    # when a newer release zip ships the hooks back at 1.
+    if [ -f "$WIN64_DIR/ue4ss/UE4SS-settings.ini" ]; then
+      ${pkgs.gnused}/bin/sed -i -E 's/^(Hook(AActorTick|BeginPlay|EndPlay|GameViewportClientTick|LocalPlayerExec)[[:space:]]*=[[:space:]]*)1/\10/' "$WIN64_DIR/ue4ss/UE4SS-settings.ini"
+    fi
+
     # Paks — tolerate errors from root-owned files left by manual installs
     find "$STATE_DIRECTORY/MotorTown/Content/Paks/" -maxdepth 1 \
       -type f -name "*.pak" -not -name "MotorTown-WindowsServer.pak" \
