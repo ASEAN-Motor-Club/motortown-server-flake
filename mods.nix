@@ -33,8 +33,16 @@
 
   engineIniFile = pkgs.writeText "engine.ini" ''
     [/Script/OnlineSubsystemUtils.IpNetDriver]
-    ConnectionTimeout=6000.0
-    InitialConnectTimeout=6000.0
+    ConnectionTimeout=120.0
+    InitialConnectTimeout=120.0
+
+    [/Script/SteamSockets.SteamSocketsNetDriver]
+    ConnectionTimeout=120.0
+    InitialConnectTimeout=120.0
+
+    [/Script/MotorTown.MTSteamSocketsNetDriver]
+    ConnectionTimeout=120.0
+    InitialConnectTimeout=120.0
 
     [SystemSettings]
     t.MaxFPS=${toString maxFps}
