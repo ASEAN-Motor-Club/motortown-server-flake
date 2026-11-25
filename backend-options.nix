@@ -99,6 +99,10 @@ with lib; let
       type = types.bool;
       default = true;
     };
+    bSendCrashReports = mkOption {
+      type = types.bool;
+      default = false;
+    };
     HostWebAPIServerPassword = mkOption {
       type = types.str;
       default = "hackme";
